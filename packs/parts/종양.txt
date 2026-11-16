@@ -1,0 +1,26 @@
+## 종양
+종양 관련 SIADH의 기본 치료는 수분 제한이며, 심한 신경학적 증상이 있으면 3% saline을 쓴다. | O | 대표 원인 종양은 SCLC이며, 원인 종양 치료를 함께 한다.
+SIADH에서는 혈청 삼투압이 낮고, 소변 Na과 소변 삼투압도 낮다. | X | ADH 과다로 소변이 농축되어 소변 Na과 소변 삼투압은 높다.
+Ectopic ACTH 증후군에서는 high-dose dexamethasone 투여 시 cortisol이 억제된다. | X | 억제되지 않는다. 고용량 DEX에 억제되는 것은 뇌하수체성 Cushing disease다.
+Ectopic ACTH 증후군의 약물치료로 cortisol 합성 억제제인 ketoconazole, metyrapone을 쓴다. | O | 부신절제술을 하면 이후 외인성 steroid 보충이 필요하다.
+악성 종양에 의한 고칼슘혈증에서 이뇨제가 필요하면 thiazide를 쓴다. | X | Thiazide는 Ca 재흡수를 늘려 금기다. Ca 배설을 늘리는 것은 loop diuretic이다.
+SVC 증후군의 치료 방침을 정하려면 조직검사로 원발암의 조직형을 먼저 확인해야 한다. | O | 조직형에 따라 방사선치료(NSCLC)와 항암치료(SCLC, 림프종)가 갈린다.
+SCLC가 원인인 SVC 증후군의 1차 치료는 방사선치료이다. | X | SCLC, 림프종, germ cell tumor는 항암치료를 한다. 방사선치료는 NSCLC와 전이암에 쓴다.
+종양용해증후군에서는 요산, K, 인과 함께 혈청 칼슘도 상승한다. | X | 인이 칼슘과 결합해 calcium phosphate로 침착되어 저칼슘혈증이 생긴다.
+종양용해증후군의 치료는 적극적 수액과 allopurinol이며, allopurinol 알레르기 시 febuxostat을 쓴다. | O | 반응이 없으면 요산을 allantoin으로 분해하는 rasburicase를 추가한다.
+암 환자의 등 통증이 누우면 악화되고 척추 압통이 있으면 전이성 척수압박을 의심한다. | O | 누우면 통증이 호전되는 추간판탈출증과의 감별점이다.
+전이성 척수압박의 기본 치료는 dexamethasone과 방사선치료이다. | O | 척추 불안정성이나 골절 골편이 있으면 수술로 감압과 고정을 한다.
+전이성 척수압박이 의심되면 확진을 위해 bone scan을 시행한다. | X | 확진 검사는 whole spine MRI다. 다발성 전이가 흔해 척추 전체를 본다.
+국가암검진에서 대장암은 만 50세 이상에서 1년마다 분변잠혈검사를 시행한다. | O | 이상 소견이 있으면 대장내시경을 시행한다.
+간암 고위험군의 국가암검진은 6개월마다 간초음파와 AFP 검사를 시행한다. | O | 대상은 만 40세 이상의 간경변, HBsAg 양성, anti-HCV 양성 환자다.
+국가암검진 폐암 검진은 만 54~74세 고위험군에게 2년마다 흉부 단순촬영을 시행한다. | X | 흉부 단순촬영이 아니라 저선량 흉부 CT를 시행한다.
+전립선암 선별에 쓰는 PSA는 양성 전립선비대증에서도 상승할 수 있다. | O | 직장수지검사 소견과 함께 해석하면 진단적 의미가 커진다.
+Medullary thyroid cancer의 진단과 추적에 쓰는 종양표지자는 thyroglobulin이다. | X | Calcitonin이다. MTC는 calcitonin을 분비하는 C cell에서 기원한다.
+위 MALT lymphoma는 H. pylori 제균치료만으로 호전될 수 있다. | O | H. pylori는 위암과도 연관된다.
+HER2 양성 유방암의 표적치료제는 trastuzumab이다. | O | ER/PR 양성이면 tamoxifen 등 호르몬 치료를 한다.
+Cetuximab은 RAS 변이가 있는 대장암에서 효과적이다. | X | RAS wild type에서만 쓴다. RAS 변이가 있으면 EGFR 하류가 이미 활성화되어 있다.
+항암제 유발 구토의 1차 항구토제는 metoclopramide이다. | X | 1차는 5-HT3 antagonist(ondansetron)다. 심하면 aprepitant, dexamethasone을 더한다.
+Weak opioid에서 strong opioid로 바꿀 때 기존 weak opioid는 함께 유지한다. | X | 완전히 중단한다. Weak opioid가 수용체를 차지해 strong opioid 효과를 떨어뜨린다.
+암성 돌발통이 생기면 정기 진통제 용량은 유지하고 bolus 진통제를 추가한다. | O | 돌발통 횟수가 많아지면 정기 진통제 용량을 올린다.
+Bleomycin은 골수억제가 적은 대신 폐섬유화가 주된 독성이다. | O | Cisplatin, vincristine도 골수억제가 적고 대신 신경독성이 문제다.
+Doxorubicin의 심독성은 치료를 마치면 대부분 회복되는 일시적 독성이다. | X | 누적(cumulative) 독성으로, 치료가 끝나도 회복이 어렵다.

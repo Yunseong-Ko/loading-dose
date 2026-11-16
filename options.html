@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Loading Dose — 문제 편집</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: light dark; --fg:#1c1b19; --sub:#6b675e; --bg:#faf9f6; --card:#fff; --line:#e3e0d8; --accent:#3b6fd4; --bad:#c0392b; }
+  @media (prefers-color-scheme: dark) { :root { --fg:#f1efe9; --sub:#a8a499; --bg:#1f1e1c; --card:#262624; --line:#3d3b37; --accent:#8fb3f5; --bad:#f08477; } }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font:15px/1.6 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+  main { max-width:720px; margin:0 auto; padding:40px 20px 60px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  p { color:var(--sub); margin:0 0 16px; }
+  code { background:var(--card); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-size:13px; }
+  textarea { width:100%; box-sizing:border-box; min-height:340px; padding:12px; border-radius:10px;
+    border:1px solid var(--line); background:var(--card); color:var(--fg);
+    font:14px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; resize:vertical; }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:12px; }
+  button { font:inherit; padding:8px 16px; border-radius:10px; border:1px solid var(--line);
+    background:var(--card); color:var(--fg); cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  @media (prefers-color-scheme: dark) { button.primary { color:#14213d; } }
+  #status { color:var(--sub); font-size:13px; }
+  #status.bad { color:var(--bad); }
+  label { display:flex; align-items:center; gap:8px; }
+  h2 { font-size:16px; margin:28px 0 4px; }
+  #topics { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:6px 16px; margin:10px 0; }
+  #topics label { font-size:14px; }
+  #topics small { color:var(--sub); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Loading Dose — 문제 편집</h1>
+  <p>한 줄에 문제 하나씩 적으세요. O/X 문제는 <code>문장 | O 또는 X | 해설</code>, 빈칸 문제는 <code>문장 {{c1::정답}} | 해설 | 단원</code> 형식입니다. 해설과 단원은 생략할 수 있고, <code>## 과목</code> 줄을 넣으면 그 아래 문제가 그 과목으로 묶입니다. <code>#</code> 하나로 시작하는 줄은 무시됩니다. 비워 두면 기본 제공 퀴즈(KMLE 대비)가 나옵니다.</p>
+  <p>Anki 빈칸 카드를 쓰려면 Anki에서 원하는 덱을 고르고 파일 → 내보내기 → "노트를 일반 텍스트로(.txt)"로 저장한 뒤 아래 버튼으로 불러오세요. 내보낸 덱이 곧 시험범위가 됩니다.</p>
+  <textarea id="text" spellcheck="false" aria-label="문제 목록"></textarea>
+  <div class="row">
+    <button class="primary" id="save">저장</button>
+    <button id="anki">Anki 내보내기 파일 불러오기</button>
+    <input type="file" id="ankiFile" accept=".txt,text/plain" hidden>
+    <button id="sample">기본 제공 퀴즈 불러오기</button>
+    <button id="reset">정답 기록 초기화</button>
+    <label><input type="checkbox" id="enabled"> 로딩 중 카드 띄우기</label>
+  </div>
+  <div class="row"><span id="status" role="status"></span></div>
+
+  <h2>기본 제공 퀴즈 (KMLE 대비)</h2>
+  <p>위 칸을 비워 두면 여기서 고른 과목의 O/X 문제가 나옵니다. 바꾸면 바로 반영됩니다.</p>
+  <div class="row">
+    <button id="topicsAll">모두 선택</button>
+    <button id="topicsNone">모두 해제</button>
+  </div>
+  <div id="topics"></div>
+</main>
+<script src="pack.js"></script>
+<script src="cards.js"></script>
+<script src="options.js"></script>
+</body>
+</html>

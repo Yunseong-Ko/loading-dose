@@ -1,0 +1,41 @@
+## 감염
+전염단핵구증에서 급성 EBV 감염을 진단하는 혈청 표지자는 EBV-VCA IgM이다. | O | VCA IgG는 평생 양성이라 급성 감염 진단에 쓸 수 없다.
+C. difficile 환자를 접촉한 뒤의 손 위생은 알코올 손소독제로 충분하다. | X | 알코올은 spore를 죽이지 못하므로 물과 비누로 씻어야 한다.
+호중구감소성 발열의 초기 경험적 항생제에는 vancomycin을 기본으로 포함한다. | X | 초기에는 항녹농균 β-lactam을 쓰고, vancomycin은 도관 감염 등 적응증이 있을 때만 추가한다.
+거짓막대장염에서 vancomycin은 IV로 투여해야 효과가 있다. | X | IV vancomycin은 장으로 분비되지 않아 무효하며 PO로 투여한다.
+척추 골수염이 의심될 때 영상진단의 gold standard는 MRI이다. | O | X-ray와 CT는 민감도가 낮다. 성인 혈행성 골수염은 척추에 호발한다.
+간경변 환자가 생선회 섭취 후 다리에 출혈성 수포와 패혈증을 보이면 Vibrio vulnificus 감염을 의심한다. | O | 3세대 cephalosporin + doxycycline을 즉시 투여하고 괴사조직 debridement를 병행한다.
+대변검사에서 충란이 확인된 간흡충증의 치료제는 albendazole이다. | X | 흡충·조충은 praziquantel, 회충·요충이 albendazole이다.
+Legionella 폐렴의 신속 선별검사는 소변 항원검사이고 확진은 BCYE 배지 배양이다. | O | 치료는 macrolide나 respiratory fluoroquinolone이며 β-lactam은 무효하다.
+사람을 문 개를 10일간 관찰하여 건강하면 광견병 노출 후 예방은 필요 없다. | O | 동물이 이상증세를 보이거나 생포하지 못하면 HRIG와 백신을 함께 투여한다.
+아메바성 간농양은 metronidazole 단독으로 치료를 마친다. | X | 장내 잔존 아메바 제거를 위해 paromomycin 등 luminal agent를 추가한다.
+호중구감소 환자에서 ecthyma gangrenosum이 보이면 원인균으로 Pseudomonas aeruginosa를 의심한다. | O | 화상이나 항암치료 후 호중구감소가 녹농균 감염의 전형적 위험 상황이다.
+HSV 감염 확진의 gold standard는 세포검사에서 핵내 봉입체를 확인하는 것이다. | X | 핵내 봉입체는 VZV와 감별되지 않으며, 확진 gold standard는 HSV DNA PCR이다.
+3도 방실차단을 동반한 라임병은 경구 doxycycline으로 치료한다. | X | 신경 증상이나 3도 방실차단이 있으면 IV ceftriaxone을 쓴다.
+렙토스피라증의 혈청학적 진단 검사는 microscopic agglutination test(MAT)이다. | O | 쯔쯔가무시병은 IFA, 신증후군 출혈열은 IgM ELISA로 진단한다.
+Listeria 수막염은 ceftriaxone 단독으로 치료할 수 있다. | X | Listeria는 cephalosporin에 감수성이 없어 ampicillin + gentamicin을 쓴다.
+쯔쯔가무시병은 β-lactam 계열 항생제로 치료한다. | X | β-lactam에 저항성이므로 doxycycline 등 세포 내로 침투하는 항생제를 쓴다.
+말라리아 혈액도말에서 감염 유무는 thick smear로, 종 감별은 thin smear로 판단한다. | O | 종 감별과 동시감염 확인에는 PCR도 유용하다.
+P. falciparum 말라리아의 1차 치료제는 chloroquine이다. | X | chloroquine 감수성 falciparum은 거의 없어 artesunate 등 artemisinin 계열을 쓴다.
+신경매독은 benzathine penicillin G IM으로 치료한다. | X | CSF 농도가 부족하므로 aqueous crystalline penicillin G를 IV로 투여한다.
+38.3℃ 이상 발열이 2주 이상 지속되고 기본검사로도 원인을 모르면 불명열로 정의한다. | X | 3주 이상 지속이 기준이며, 면역저하 상태가 없어야 한다.
+GAS 인두염이 의심되는데 신속항원검사가 음성이면 throat culture로 확인한다. | O | 신속항원검사는 특이도는 95% 이상이지만 민감도가 55~90%로 낮다.
+사슬알균 인두염을 항생제로 치료하면 PSGN 발생을 예방할 수 있다. | X | 항생제로 예방되는 것은 급성 류마티스열이며, PSGN은 치료와 무관하게 생긴다.
+염증성 설사에서는 loperamide 같은 지사제를 우선 투여한다. | X | 지사제는 균 배출을 막아 염증성 설사에 금기이며, 경험적 항생제는 ciprofloxacin이다.
+N. gonorrhoeae 요도염의 1차 치료제는 ceftriaxone이다. | O | 클라미디아가 배제되지 않으면 azithromycin이나 doxycycline을 병합한다.
+임산부의 클라미디아 감염은 doxycycline으로 치료한다. | X | doxycycline은 임신 중 금기이므로 azithromycin을 쓴다.
+임신 중에는 MMR, 수두 같은 생백신 접종이 금기다. | O | 가임여성은 생백신 접종 후 4주간 임신을 피한다.
+수두에서 경구 항바이러스제는 발진 후 24시간 이내에 시작해야 효과적이다. | O | 면역저하자나 수두폐렴 등 심한 합병증에는 IV acyclovir를 쓴다.
+수막알균 환자의 밀접접촉자에게는 rifampin 등 예방적 항생제를 투여한다. | O | 환자의 경험적 치료는 ceftriaxone 같은 3세대 cephalosporin이다.
+신증후군 출혈열 핍뇨기에는 탈수 예방을 위해 수액을 적극적으로 투여한다. | X | 핍뇨기에는 과수액에 의한 폐부종을 주의해야 하며, 탈수 주의는 이뇨기다.
+열대지역 여행 후 발열, 안와후방통, tourniquet sign 양성이면 뎅기열을 의심한다. | O | 혈액검사에서 WBC와 PLT가 감소하며, 진단은 RT-PCR이나 IgM ELISA로 한다.
+천식 환자의 인플루엔자 치료에는 흡입형 zanamivir가 적합하다. | X | zanamivir는 흡입제라 bronchospasm 위험이 있어 천식 환자에서 금기다.
+장티푸스에서 항생제 투여 후에도 민감도가 가장 높은 배양 검체는 골수다. | O | 고열에도 맥박이 느린 relative bradycardia와 백혈구감소가 특징적 단서다.
+진드기에 물린 뒤 발열과 혈소판감소가 있으나 가피가 없으면 SFTS를 의심한다. | O | 특이 치료제가 없어 대증치료하며, 가피는 쯔쯔가무시병의 특징이다.
+칸디다혈증의 초기 치료에는 caspofungin 같은 echinocandin을 1차로 쓴다. | O | 감수성이 확인되면 가능한 경우 fluconazole로 변경한다.
+파상풍 예방접종력이 불확실한 환자가 파상풍 위험 상처를 입으면 Td와 TIG를 함께 투여한다. | O | 3회 이상 접종자는 상처 종류와 무관하게 TIG가 필요 없다.
+파상풍 접종 3회 이상인 사람이 깨끗한 경미 상처를 입으면 마지막 접종 후 5년 경과 시 Td를 준다. | X | 깨끗한 경미 상처는 10년, 파상풍 위험 상처는 5년이 기준이다.
+패혈증 쇼크의 수액소생술에서 1차로 투여하는 수액은 albumin이다. | X | 1차는 IV crystalloid이며 albumin은 2차, 이후 승압제를 쓴다.
+Methicillin 감수성 S. aureus(MSSA) 감염의 1차 약제는 vancomycin이다. | X | 1차는 nafcillin, 2차는 cefazolin이며 vancomycin은 MSSA에 효과가 떨어진다.
+Necrotizing fasciitis의 1차 치료는 응급 수술적 debridement이다. | O | 병변에 비해 심한 통증과 hemorrhagic bullae가 cellulitis와의 감별점이다.
+CD4가 200/μL 미만인 HIV 환자는 TMP-SMX로 PCP 예방을 시작한다. | O | CD4 100 미만에서는 Toxoplasma, CMV, MAC 기회감염이 늘어난다.

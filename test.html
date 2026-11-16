@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Loading Dose — 동작 테스트</title>
+<style>
+  body { font: 15px/1.6 -apple-system, "Apple SD Gothic Neo", sans-serif; max-width: 640px; margin: 60px auto; padding: 0 20px; }
+  textarea { width: 100%; height: 70px; box-sizing: border-box; padding: 10px; font: inherit; }
+  #log { color: #666; margin-top: 12px; }
+</style>
+</head>
+<body>
+<h1>가짜 채팅창</h1>
+<p>아래에 아무 글이나 쓰고 Enter를 누르면 8초 동안 "답변 생성 중" 상태를 흉내 냅니다. 확장 프로그램 설치 없이 카드 동작만 확인하는 페이지입니다.</p>
+<textarea id="box" placeholder="질문을 입력하고 Enter"></textarea>
+<div id="log">대기 중</div>
+<div id="slot"></div>
+<script src="pack.js"></script>
+<script src="cards.js"></script>
+<script src="content.js"></script>
+<script>
+  const box = document.getElementById('box');
+  box.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || e.shiftKey || e.isComposing || !box.value.trim()) return;
+    e.preventDefault();
+    box.value = '';
+    startFakeStream(8000);
+  });
+  function startFakeStream(ms) {
+    const slot = document.getElementById('slot');
+    slot.innerHTML = '<button aria-label="Stop response">■ 중지</button>';
+    document.getElementById('log').textContent = '답변 생성 중…';
+    setTimeout(() => {
+      slot.innerHTML = '';
+      document.getElementById('log').textContent = '답변 완료';
+    }, ms);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+## 혈액
+간질환 응고장애를 vitamin K 결핍이나 warfarin 과량과 감별할 때 factor V 수치가 도움이 된다. | O | Factor V 는 간에서만 만들어지고 vit. K 비의존이라 간질환에서만 감소한다.
+PT와 aPTT가 모두 연장된 진행된 간질환 응고장애는 vitamin K 투여로 교정한다. | X | 합성 자체의 장애라 vit. K 로 교정되지 않고 FFP 로 응고인자를 보충한다.
+대구성 빈혈 환자가 손발 저림과 보행 장애를 보이면 folate 보다 cobalamin 결핍을 의심한다. | O | Folate 결핍은 신경 증상 없이 위장관 증상만 보인다.
+Hypersegmented neutrophil 이 없는 대구성 빈혈은 megaloblastic anemia 로 분류한다. | X | Non-megaloblastic 이다. 간질환, alcoholism, 약물이 대표 원인이다.
+다발골수종의 말초혈액도말에서 특징적으로 보이는 소견은 target cell 이다. | X | 동전꾸러미 모양의 rouleaux formation 이다. Target cell 은 thalassemia 에서 보인다.
+사혈로 조절되지 않는 진성적혈구증가증에는 JAK1/2 억제제 ruxolitinib 을 쓸 수 있다. | O | Ruxolitinib 은 골수섬유증의 비장비대 치료에도 쓴다.
+림프종이 의심되는 림프절 비대는 세침흡인검사로 진단한다. | X | 림프절 구조를 봐야 아형 분류가 가능하므로 절제생검(또는 gun biopsy)을 한다.
+원인이 밝혀지지 않은 림프절 비대를 추적관찰하는 동안에는 스테로이드를 쓰지 않는다. | O | 림프종이 스테로이드에 반응해 작아지면 진단이 늦어진다.
+새로 진단된 DLBCL 의 표준 1차 항암화학요법은 ABVD 이다. | X | DLBCL 은 R-CHOP 이다. ABVD 는 Hodgkin lymphoma 의 표준 요법이다.
+H. pylori 양성인 위 MALT 림프종의 1차 치료는 H. pylori 제균 치료이다. | O | H. pylori 음성이면 방사선치료를 한다.
+혈청 철 감소, ferritin 증가, TIBC 감소를 보이는 빈혈은 철결핍빈혈을 시사한다. | X | 만성질환빈혈 소견이다. 철결핍빈혈은 ferritin 이 낮고 TIBC 가 높다.
+철결핍이 동반된 만성질환빈혈에 EPO 를 쓰려면 철 결핍 교정이 먼저 이루어져야 한다. | O | EPO 투여 후 Hb 가 오히려 떨어지면 감염이나 철 고갈을 의심한다.
+ITP 는 특이 확진검사가 없어 혈소판감소증의 다른 원인을 배제하고 진단한다. | O | 말초혈액도말에 특이 소견이 없고 PT, aPTT 는 정상이다.
+ITP 에서 치료가 필요할 때 1차 치료는 비장절제술이다. | X | 1차는 steroid 다. 비장절제술과 TPO receptor agonist 는 steroid 불응 시 쓴다.
+말초혈액도말에서 Auer rod 가 보이면 AML 로 진단할 수 있다. | O | ALL 에서는 Auer rod 가 보이지 않는다.
+CLL 은 진단되면 증상이 없어도 곧바로 항암치료를 시작한다. | X | 증상이 있을 때 치료를 시작한다. 25% 는 무증상이다.
+비타민 K 결핍 환자에게 활동성 출혈이 있으면 FFP 로 응고인자를 즉시 보충한다. | O | 출혈이 없으면 vitamin K 주사가 1차 치료다.
+증상 없는 만성 철결핍빈혈 환자는 Hb 7 g/dL 미만이면 즉시 수혈한다. | X | 만성 IDA 는 응급이 아니므로 수혈보다 원인 감별과 교정이 먼저다.
+냉항체 자가면역용혈빈혈의 1차 약물은 steroid 이다. | X | 1차는 rituximab 이다. 보체 매개 혈관내 용혈이라 steroid, 비장절제는 효과가 없다.
+구상적혈구가 보이는 용혈성 빈혈에서 HS 와 AIHA 는 Coombs test 로 감별한다. | O | HS 는 Coombs 음성이고 osmotic fragility test 가 양성이다.
+PNH 의 확진검사는 말초혈액 flow cytometry 로 CD55, CD59 감소를 확인하는 것이다. | O | 치료제 eculizumab 은 anti-C5 항체로 보체 활성을 막는다.
+설사 후 발생한 소아의 전형적 HUS 는 혈장교환술이 1차 치료이다. | X | 대증치료가 원칙이고 AKI 가 심하면 투석한다. 혈장교환술은 TTP 의 치료다.
+혈성 설사에 이어 발생한 HUS 에서는 지사제와 항생제를 쓰지 않는다. | O | 혈소판 수혈도 혈전을 악화시켜 금기다.
+재생불량빈혈의 진단에는 골수흡인보다 골수생검이 필요하다. | O | 골수생검에서 hypocellular, fatty marrow 를 확인한다.
+Severe AA 환자가 젊고 HLA 일치 형제가 있으면 1차 치료는 면역억제치료이다. | X | 동종 골수이식이 1차다. 조건이 안 되면 ATG, cyclosporine 기반 면역억제치료를 한다.
+동남아 출신 소구성 빈혈 환자에서 철결핍빈혈과 thalassemia 를 감별하는 확진검사는 Hb 전기영동이다. | O | Thalassemia 의 도말에서는 target cell 이 보인다.
+α thalassemia trait 는 Hb 전기영동에서 HbH 증가를 보인다. | X | Trait 는 전기영동이 정상이다. HbH 증가는 HbH disease 소견이다.
+철분제 치료에 반응하지 않는 철결핍빈혈의 가장 흔한 원인은 복약 불순응이다. | O | 그다음으로 지속되는 출혈 부위를 의심한다.
+철결핍빈혈은 소구성 저색소성 빈혈이며 RDW 가 감소한다. | X | RDW 는 증가한다. Thalassemia 와의 감별점 중 하나다.
+Mixing test 에서 연장된 aPTT 가 교정되지 않으면 응고인자 억제물질을 의심한다. | O | 교정되면 응고인자 결핍이다. 비타민 K 결핍도 교정된다.
+Dabigatran 에 의한 출혈의 해독제는 andexanet alfa 이다. | X | Idarucizumab 이다. Andexanet alfa 는 factor Xa 억제제의 해독제다.
+분열적혈구가 보이는 환자에서 PT와 aPTT 가 연장되어 있으면 DIC 보다 TTP 를 시사한다. | X | TTP/HUS 는 PT, aPTT 가 정상이다. 연장되면 DIC 를 시사한다.
+von Willebrand disease 의 1차 치료는 desmopressin(DDAVP) 이다. | O | 투여 후 저나트륨혈증 예방을 위해 24시간 수분을 제한한다.
+vWF 가 전혀 없는 type 3 vWD 에도 desmopressin 이 효과적이다. | X | DDAVP 는 저장된 vWF 를 방출시키므로 효과가 없다. vWF/factor VIII 제제를 쓴다.
+HIT 가 의심되면 unfractionated heparin 을 LMWH 로 바꿔 항응고를 이어간다. | X | 항체 교차반응으로 LMWH 도 금기다. argatroban 등 비헤파린 항응고제로 바꾼다.
+HIT 급성기에는 혈소판이 회복되기 전까지 warfarin 단독 투여를 피한다. | O | Protein C/S 가 먼저 감소해 혈전이 악화될 수 있다.
+Hemophilia B 환자의 출혈 조절에 desmopressin 을 쓸 수 있다. | X | DDAVP 는 factor VIII 를 방출시키므로 hemophilia A 에만 효과가 있다.
+혈우병 환자의 통증 조절에는 NSAID 대신 acetaminophen 을 쓴다. | O | 중증 혈우병은 응고인자를 예방적으로 주기 투여한다.
+TTP 의 1차 치료는 혈장교환술과 steroid 이다. | O | 교환에 쓰는 FFP 가 결핍된 ADAMTS13 을 보충한다.
+ADAMTS13 활성도가 10% 미만이면 TTP 보다 HUS 를 시사한다. | X | TTP 를 시사한다. HUS 는 선행 혈성 설사와 대변배양으로 확인한다.

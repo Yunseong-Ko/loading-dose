@@ -1,0 +1,4 @@
+.DS_Store
+.claude/
+mac/build/
+배포/*.zip

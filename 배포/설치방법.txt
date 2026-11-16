@@ -1,0 +1,50 @@
+Loading Dose — AI 답변을 기다리는 동안 O/X 복습 (테스트 버전)
+
+Claude나 ChatGPT에 질문을 보내고 답을 기다리는 몇 초 동안, 화면 위에 국시 대비 O/X 문제가 하나씩 뜹니다.
+답이 도착하면 알아서 접힙니다. 20개 과목 780문항이 기본으로 들어 있습니다.
+
+쓰는 곳에 맞는 것 하나만 설치하면 됩니다.
+ - Claude·ChatGPT를 Mac 앱으로 쓴다 → [A] Mac 앱
+ - 크롬에서 claude.ai, chatgpt.com 으로 쓴다 → [B] 크롬 확장
+
+
+[A] Mac 앱  (LoadingDose-Mac.zip)
+
+1. LoadingDose-Mac.zip 을 더블클릭해 압축을 풀고, 나온 Loading Dose 앱을 "응용 프로그램" 폴더로 옮깁니다.
+2. Loading Dose 를 더블클릭합니다. "열 수 없습니다"라는 경고가 뜨면 "완료"를 누릅니다.
+3. 시스템 설정 → 개인정보 보호 및 보안 → 맨 아래로 내려 "그래도 열기"를 누릅니다.
+   (macOS 14 이하: Loading Dose 앱을 Control-클릭 → 열기)
+4. 화면 맨 위 메뉴 막대에 ⏎ 표시가 생깁니다. ⏎ → "카드 미리 보기 (8초)"를 눌러 카드가 뜨는지 봅니다.
+5. 실제로 쓰려면 권한이 필요합니다. ⏎ → "손쉬운 사용 설정 열기…" → 목록에서 "Loading Dose"를 켭니다.
+   ⏎ 메뉴 첫 줄이 "작동 중"으로 바뀌면 준비된 것입니다.
+6. Claude나 ChatGPT 앱에서 질문을 쓰고 Enter 를 누르면 카드가 뜹니다.
+
+ - 답하기: 버튼을 누르거나 Option+O / Option+X
+ - 과목 고르기: ⏎ → 시험범위
+ - 내 Anki 빈칸 카드로 풀기: ⏎ → "Anki에서 빈칸 카드 가져오기…" 후 시험범위에서 덱 선택
+ - 끄기: ⏎ → Loading Dose 종료
+
+3번에서 "그래도 열기"가 안 보이면 터미널에 아래 한 줄을 붙여넣고 다시 엽니다.
+   xattr -dr com.apple.quarantine "/Applications/Loading Dose.app"
+
+
+[B] 크롬 확장  (LoadingDose-Chrome.zip)
+
+1. LoadingDose-Chrome.zip 압축을 풉니다. loading-dose-chrome 폴더가 나옵니다. 이 폴더는 지우면 안 되니 둘 곳에 옮겨 두세요.
+2. 크롬 주소창에 chrome://extensions 를 입력합니다.
+3. 오른쪽 위 "개발자 모드"를 켭니다.
+4. "압축해제된 확장 프로그램을 로드합니다"를 누르고 loading-dose-chrome 폴더를 선택합니다.
+5. claude.ai 나 chatgpt.com 탭을 새로고침한 뒤 질문을 보내면 카드가 뜹니다.
+
+ - 답하기: 버튼을 누르거나 Alt(Option)+O / Alt(Option)+X
+ - 과목 고르기·내 문제 넣기: 크롬 오른쪽 위 퍼즐 아이콘 → Loading Dose
+
+
+알아 둘 점
+
+ - 테스트 버전입니다. 카드가 안 뜨거나 답이 왔는데도 안 사라지면 알려 주세요.
+   Mac 앱은 ⏎ → "진단 기록 파일 열기"로 열리는 파일을 보내 주면 고치는 데 도움이 됩니다.
+   (대화 내용은 적히지 않고, 앱 이름·글자 수·"중지" 버튼 이름만 적힙니다.)
+ - 기본 문항은 검수를 거치지 않았습니다. 틀린 문항을 보면 알려 주세요.
+ - Mac 앱의 손쉬운 사용 권한은 Enter 키 입력과 Claude·ChatGPT 앱의 "중지" 버튼을 읽는 데만 씁니다.
+ - 푼 기록은 내 컴퓨터에만 저장됩니다.
