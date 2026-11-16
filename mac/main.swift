@@ -141,7 +141,9 @@ final class Deck {
     private var stats: [String: [Int]] = [:]  // 문장 → [맞힌 횟수, 틀린 횟수]
     private var lastQ: String?
     private var hasOwnCards = false   // cards.txt 에 직접 넣은(또는 AI 로 만든) 문제가 있는지
-    private var own: [Card] = []      // cards.txt 의 문제
+    private var own: [Card] = []      // cards.txt 의 문제 중 켜 둔 덱의 것
+    private var ownAll: [Card] = []   // cards.txt 의 문제 전부
+    private(set) var ownOff: Set<String> = []   // 끈 내 덱 ("## 이름" 단위)
     // 앱에 들어 있는 기본 제공 퀴즈 (packs/kmle.txt)
     private let builtin: [Card] = Bundle.main.url(forResource: "kmle", withExtension: "txt")
         .flatMap { try? String(contentsOf: $0, encoding: .utf8) }.map(parseCards) ?? []
@@ -163,6 +165,32 @@ final class Deck {
         UserDefaults.standard.set(Array(packOff).sorted(), forKey: "packOff")
         reload()
     }
+
+    func setAllPacks(on: Bool) {
+        packOff = on ? [] : Set(packTopics.map { $0.name })
+        UserDefaults.standard.set(Array(packOff).sorted(), forKey: "packOff")
+        reload()
+    }
+
+    // 내 덱 목록: cards.txt 의 "## 이름" 단위 (파일에 나온 순서). 이름 없는 문제는 "" 로 묶인다.
+    var ownTopics: [(name: String, count: Int)] {
+        var order: [String] = []
+        var counts: [String: Int] = [:]
+        for c in ownAll {
+            if counts[c.topic] == nil { order.append(c.topic) }
+            counts[c.topic, default: 0] += 1
+        }
+        return order.map { (name: $0, count: counts[$0]!) }
+    }
+
+    func toggleOwn(_ topic: String) {
+        if ownOff.contains(topic) { ownOff.remove(topic) } else { ownOff.insert(topic) }
+        UserDefaults.standard.set(Array(ownOff).sorted(), forKey: "ownOff")
+        reload()
+    }
+
+    var ownCount: Int { return own.count }                                            // 켜 둔 내 덱의 문항 수
+    var packCount: Int { return builtin.filter { !packOff.contains($0.topic) }.count }   // 켜 둔 기본 제공 문항 수
     private var day = ""        // 오늘 날짜 (yyyy-MM-dd)
     private var dayDone = 0     // 오늘 푼 문제 수
     private var streak = 0      // 연속 정답
@@ -194,6 +222,7 @@ final class Deck {
         streak = d.integer(forKey: "streak")
         scope = Set(d.stringArray(forKey: "scope") ?? [])
         packOff = Set(d.stringArray(forKey: "packOff") ?? [])
+        ownOff = Set(d.stringArray(forKey: "ownOff") ?? [])
         reload()
         loadAnki()
     }
@@ -201,7 +230,8 @@ final class Deck {
     func reload() {
         let parsed = (try? String(contentsOf: Deck.file, encoding: .utf8)).map(parseCards) ?? []
         // 예전 판이 파일에 써 넣던 예시 10문제는 내 문제로 치지 않는다.
-        own = parsed.filter { c in !defaultCards.contains { $0.q == c.q } }
+        ownAll = parsed.filter { c in !defaultCards.contains { $0.q == c.q } }
+        own = ownAll.filter { !ownOff.contains($0.topic) }
         hasOwnCards = !own.isEmpty
         cards = own + builtin.filter { !packOff.contains($0.topic) }
         if cards.isEmpty { cards = defaultCards }
@@ -1245,13 +1275,14 @@ final class GenWindow: NSObject {
     private let pdfLabel = NSTextField(labelWithString: "")
     private var clearPDFButton: NSButton!
     private var pdf: (data: Data, text: String, name: String, pages: Int)?
+    var onSaved: (() -> Void)?   // 덱이 저장되면 설정 창 목록을 새로 그린다
 
     init(deck: Deck) {
         self.deck = deck
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 580, height: 600),
                           styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
         super.init()
-        window.title = "정리본·강의록으로 O/X 만들기"
+        window.title = "새 덱 만들기 — 강의록 PDF·정리본으로 O/X"
         window.isReleasedWhenClosed = false
         build()
     }
@@ -1264,7 +1295,7 @@ final class GenWindow: NSObject {
     }
 
     private func build() {
-        subject.placeholderString = "과목이나 단원 이름 (예: 순환기 — 심부전)"
+        subject.placeholderString = "덱 이름 (예: 순환기 — 심부전). 같은 이름의 덱이 있으면 거기에 추가됩니다"
         let scroll = NSTextView.scrollableTextView()
         scroll.borderType = .bezelBorder
         notes = scroll.documentView as? NSTextView
@@ -1401,9 +1432,292 @@ final class GenWindow: NSObject {
                 s.deck.appendGenerated(subject: name.isEmpty ? "정리본" : name, items: r.items)
                 var note = r.dropped > 0 ? " (근거를 원문에서 찾지 못한 \(r.dropped)문항은 뺐습니다)" : ""
                 if !r.verified { note = " (글자를 뽑을 수 없는 PDF라 근거 확인은 하지 못했습니다)" }
-                s.say("\(r.items.count)문항을 저장했습니다" + note + ". ⏎ 메뉴 → O/X 문제 편집에서 확인하고 고칠 수 있습니다.")
+                let deckName = name.isEmpty ? "정리본" : name
+                s.say("\(r.items.count)문항을 ‘\(deckName)’ 덱에 저장했습니다" + note + ". 설정 창의 ‘내 덱’에서 켜고 끌 수 있고, ‘내 문제 직접 편집’에서 고칠 수 있습니다.")
+                s.onSaved?()
             }
         }
+    }
+}
+
+// ───────────────────────── 설정 창 ─────────────────────────
+// 앱을 열면(또는 ⏎ 메뉴 → 설정 열기) 뜨는 창. 어떤 과목·덱에서 문제를 낼지 고르고, 새 덱을 만든다.
+
+final class FlippedView: NSView {
+    override var isFlipped: Bool { return true }
+}
+
+final class SettingsWindow: NSObject, NSWindowDelegate {
+    let window: NSWindow
+    private let deck: Deck
+    private unowned let app: AppController
+    private let statusDot = NSTextField(labelWithString: "●")
+    private let statusLabel = NSTextField(labelWithString: "")
+    private var permButton: NSButton!
+    private let list = NSStackView()
+    private let summary = NSTextField(wrappingLabelWithString: "")
+    private var packNames: [String] = []
+    private var ownNames: [String] = []
+    private var ankiTops: [String] = []
+    private var centered = false
+
+    init(deck: Deck, app: AppController) {
+        self.deck = deck
+        self.app = app
+        window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 620, height: 720),
+                          styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+        super.init()
+        window.title = "Loading Dose"
+        window.isReleasedWhenClosed = false
+        window.minSize = NSSize(width: 560, height: 480)
+        window.delegate = self
+        build()
+    }
+
+    private func caption(_ s: String) -> NSTextField {
+        let l = NSTextField(wrappingLabelWithString: s)
+        l.font = NSFont.systemFont(ofSize: 12)
+        l.textColor = .secondaryLabelColor
+        return l
+    }
+
+    private func smallButton(_ title: String, _ sel: Selector) -> NSButton {
+        let b = NSButton(title: title, target: self, action: sel)
+        b.bezelStyle = .rounded
+        b.controlSize = .small
+        b.font = NSFont.systemFont(ofSize: 11)
+        return b
+    }
+
+    private func build() {
+        statusLabel.font = NSFont.systemFont(ofSize: 13, weight: .medium)
+        statusLabel.lineBreakMode = .byTruncatingTail
+        statusLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        permButton = NSButton(title: "권한 설정 열기…", target: app, action: #selector(AppController.openSettings))
+        permButton.bezelStyle = .rounded
+        let demo = NSButton(title: "카드 미리 보기", target: app, action: #selector(AppController.startDemo))
+        demo.bezelStyle = .rounded
+        let spacer = NSView()
+        spacer.setContentHuggingPriority(.init(1), for: .horizontal)
+        let header = NSStackView(views: [statusDot, statusLabel, spacer, permButton, demo])
+        header.spacing = 8
+
+        let title = NSTextField(labelWithString: "출제 범위")
+        title.font = NSFont.systemFont(ofSize: 17, weight: .bold)
+        let sub = caption("체크한 과목과 덱에서 문제가 나옵니다. 바꾸면 다음 카드부터 반영됩니다.")
+
+        list.orientation = .vertical
+        list.alignment = .leading
+        list.spacing = 6
+        list.translatesAutoresizingMaskIntoConstraints = false
+        let doc = FlippedView()
+        doc.translatesAutoresizingMaskIntoConstraints = false
+        doc.addSubview(list)
+        let scroll = NSScrollView()
+        scroll.hasVerticalScroller = true
+        scroll.borderType = .bezelBorder
+        scroll.drawsBackground = false
+        scroll.documentView = doc
+
+        summary.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+
+        let newDeck = NSButton(title: "새 덱 만들기 (PDF·정리본)…", target: app, action: #selector(AppController.openGen))
+        newDeck.bezelStyle = .rounded
+        newDeck.keyEquivalent = "\r"
+        let edit = NSButton(title: "내 문제 직접 편집…", target: app, action: #selector(AppController.editCards))
+        edit.bezelStyle = .rounded
+        let anki = NSButton(title: "Anki에서 가져오기…", target: app, action: #selector(AppController.importAnki))
+        anki.bezelStyle = .rounded
+        let actions = NSStackView(views: [newDeck, edit, anki])
+        actions.spacing = 8
+        let foot = caption("새 덱 만들기는 강의록 PDF나 정리본을 Claude API로 보내 O/X 문항을 만듭니다. 본인 Claude API 키가 필요합니다.")
+
+        let stack = NSStackView(views: [header, title, sub, scroll, summary, actions, foot])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 10
+        stack.setCustomSpacing(16, after: header)
+        stack.setCustomSpacing(2, after: title)
+        stack.edgeInsets = NSEdgeInsets(top: 16, left: 18, bottom: 16, right: 18)
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        let content = window.contentView!
+        content.addSubview(stack)
+        var cs = [
+            stack.topAnchor.constraint(equalTo: content.topAnchor),
+            stack.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+            stack.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: content.trailingAnchor),
+            doc.topAnchor.constraint(equalTo: scroll.contentView.topAnchor),
+            doc.leadingAnchor.constraint(equalTo: scroll.contentView.leadingAnchor),
+            doc.trailingAnchor.constraint(equalTo: scroll.contentView.trailingAnchor),
+            list.topAnchor.constraint(equalTo: doc.topAnchor, constant: 12),
+            list.leadingAnchor.constraint(equalTo: doc.leadingAnchor, constant: 14),
+            list.trailingAnchor.constraint(equalTo: doc.trailingAnchor, constant: -14),
+            list.bottomAnchor.constraint(equalTo: doc.bottomAnchor, constant: -12),
+            scroll.heightAnchor.constraint(greaterThanOrEqualToConstant: 220),
+        ]
+        cs += [header, sub, scroll, summary, foot].map { $0.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -36) }
+        NSLayoutConstraint.activate(cs)
+        scroll.setContentHuggingPriority(.init(1), for: .vertical)
+    }
+
+    func show() {
+        refresh()
+        NSApp.activate(ignoringOtherApps: true)
+        if !centered { window.center(); centered = true }
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    func windowDidBecomeKey(_ notification: Notification) { refresh() }
+
+    func refreshStatus() {
+        let on = app.isActive
+        statusDot.textColor = on ? NSColor.systemGreen : NSColor.systemOrange
+        statusLabel.stringValue = on
+            ? "작동 중 — Claude·ChatGPT 앱에서 Enter를 누르면 카드가 뜹니다"
+            : "권한 필요 — 손쉬운 사용에서 ‘Loading Dose’를 켜야 카드가 뜹니다"
+        permButton.isHidden = on
+    }
+
+    // ── 목록 ──
+    private func sectionHeader(_ title: String, _ buttons: [NSButton] = []) -> NSView {
+        let l = NSTextField(labelWithString: title)
+        l.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
+        let spacer = NSView()
+        spacer.setContentHuggingPriority(.init(1), for: .horizontal)
+        let row = NSStackView(views: [l, spacer] + buttons)
+        row.spacing = 6
+        return row
+    }
+
+    private func check(_ title: String, _ sel: Selector, tag: Int, state: NSControl.StateValue, mixed: Bool = false) -> NSButton {
+        let b = NSButton(checkboxWithTitle: title, target: self, action: sel)
+        b.tag = tag
+        b.allowsMixedState = mixed
+        b.state = state
+        b.font = NSFont.systemFont(ofSize: 13)
+        b.lineBreakMode = .byTruncatingTail
+        b.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)   // 긴 이름이 줄 맞춤을 밀지 않게
+        return b
+    }
+
+    // 체크박스를 두 줄로 나란히 놓는다.
+    private func addGrid(_ boxes: [NSButton]) {
+        var i = 0
+        while i < boxes.count {
+            let pair = Array(boxes[i..<min(i + 2, boxes.count)])
+            let row = NSStackView(views: pair)
+            row.spacing = 12
+            row.distribution = .fillEqually
+            list.addArrangedSubview(row)
+            row.widthAnchor.constraint(equalTo: list.widthAnchor).isActive = true
+            if pair.count == 1 { row.addArrangedSubview(NSView()) }
+            i += 2
+        }
+    }
+
+    private func addFull(_ v: NSView, gapBefore: CGFloat? = nil) {
+        if let g = gapBefore, let last = list.arrangedSubviews.last { list.setCustomSpacing(g, after: last) }
+        list.addArrangedSubview(v)
+        v.widthAnchor.constraint(equalTo: list.widthAnchor).isActive = true
+    }
+
+    func refresh() {
+        refreshStatus()
+        deck.reload()
+        list.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        // 기본 제공
+        let packs = deck.packTopics
+        packNames = packs.map { $0.name }
+        addFull(sectionHeader("기본 제공 O/X — KMLE 대비 (\(packs.reduce(0) { $0 + $1.count })문항)",
+                              [smallButton("모두 켜기", #selector(allPacksOn)), smallButton("모두 끄기", #selector(allPacksOff))]))
+        addGrid(packs.enumerated().map { i, t in
+            check("\(t.name)  \(t.count)", #selector(packToggled(_:)), tag: i, state: deck.packOff.contains(t.name) ? .off : .on)
+        })
+
+        // 내 덱
+        let owns = deck.ownTopics
+        ownNames = owns.map { $0.name }
+        addFull(sectionHeader("내 덱 — PDF·정리본으로 만들었거나 직접 쓴 문제"), gapBefore: 18)
+        if owns.isEmpty {
+            addFull(caption("아직 없습니다. 아래 ‘새 덱 만들기’로 강의록 PDF나 정리본에서 O/X 덱을 만들 수 있습니다."))
+        } else {
+            addGrid(owns.enumerated().map { i, t in
+                check("\(t.name.isEmpty ? "분류 없음" : t.name)  \(t.count)", #selector(ownToggled(_:)), tag: i,
+                      state: deck.ownOff.contains(t.name) ? .off : .on)
+            })
+        }
+
+        // Anki
+        addFull(sectionHeader("Anki 빈칸 카드", deck.scope.isEmpty ? [] : [smallButton("모두 해제", #selector(ankiClear))]), gapBefore: 18)
+        if deck.groups.isEmpty {
+            ankiTops = []
+            addFull(caption("가져온 카드가 없습니다. 아래 ‘Anki에서 가져오기’를 누르면 내 Anki의 빈칸 카드를 읽어 옵니다 (Anki 원본은 바꾸지 않습니다)."))
+        } else {
+            var order: [String] = []
+            var total: [String: Int] = [:]
+            var all: [String: Int] = [:]
+            var picked: [String: Int] = [:]
+            for g in deck.groups {
+                let top = g.name.components(separatedBy: "::")[0]
+                if total[top] == nil { order.append(top) }
+                total[top, default: 0] += g.count
+                all[top, default: 0] += 1
+                if deck.scope.contains(g.name) { picked[top, default: 0] += 1 }
+            }
+            ankiTops = order
+            addGrid(order.enumerated().map { i, top in
+                let on = picked[top] ?? 0
+                let state: NSControl.StateValue = on == 0 ? .off : (on == all[top]! ? .on : .mixed)
+                return check("\(top)  \(total[top]!)장", #selector(ankiToggled(_:)), tag: i, state: state, mixed: true)
+            })
+            addFull(caption("Anki 범위를 고르면 빈칸 카드가 주로 나오고, O/X는 내 덱에서만 3문제 중 1문제꼴로 섞입니다. 과목별 세부 범위는 메뉴 막대 ⏎ → 시험범위에서 고릅니다."))
+        }
+
+        // 요약
+        if deck.poolCount > 0 {
+            var s = "지금 범위: Anki 빈칸 카드 \(deck.poolCount)장"
+            if deck.ownCount > 0 && deck.mixOX { s += " + 내 덱 O/X \(deck.ownCount)문항" }
+            summary.stringValue = s + "  (Anki 범위를 고른 동안 기본 제공 O/X는 나오지 않습니다)"
+        } else {
+            let n = deck.ownCount + deck.packCount
+            summary.stringValue = n > 0
+                ? "지금 범위: O/X \(n)문항 (기본 제공 \(deck.packCount) + 내 덱 \(deck.ownCount))"
+                : "고른 과목이 없습니다. 하나 이상 켜지 않으면 예시 문제 10개만 나옵니다."
+        }
+    }
+
+    @objc private func packToggled(_ b: NSButton) {
+        guard packNames.indices.contains(b.tag) else { return }
+        deck.togglePack(packNames[b.tag])
+        refresh()
+    }
+
+    @objc private func ownToggled(_ b: NSButton) {
+        guard ownNames.indices.contains(b.tag) else { return }
+        deck.toggleOwn(ownNames[b.tag])
+        refresh()
+    }
+
+    @objc private func ankiToggled(_ b: NSButton) {
+        guard ankiTops.indices.contains(b.tag) else { return }
+        let top = ankiTops[b.tag]
+        let under = Set(deck.groups.map { $0.name }.filter { $0 == top || $0.hasPrefix(top + "::") })
+        // 하나라도 꺼져 있으면 전부 켜고, 전부 켜져 있으면 전부 끈다.
+        deck.setScope(under.isSubset(of: deck.scope) ? deck.scope.subtracting(under) : deck.scope.union(under))
+        refresh()
+    }
+
+    @objc private func allPacksOn() { deck.setAllPacks(on: true); refresh() }
+    @objc private func allPacksOff() { deck.setAllPacks(on: false); refresh() }
+    @objc private func ankiClear() { deck.setScope([]); refresh() }
+
+    // 동작 확인용: 창 내용을 PNG 로 저장한다.
+    func snapshot(to url: URL) {
+        guard let v = window.contentView, let rep = v.bitmapImageRepForCachingDisplay(in: v.bounds) else { return }
+        v.cacheDisplay(in: v.bounds, to: rep)
+        try? rep.representation(using: .png, properties: [:])?.write(to: url)
     }
 }
 
@@ -1428,6 +1742,16 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let statusLine = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private let scopeMenu = NSMenu()
     private lazy var genWindow = GenWindow(deck: deck)
+    private lazy var settings = SettingsWindow(deck: deck, app: self)
+    var isActive: Bool { return tap != nil }
+
+    @objc func openMain() { settings.show() }
+
+    // 실행 중에 앱 아이콘을 다시 열면(Finder·Launchpad·Spotlight) 설정 창을 보여 준다.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        settings.show()
+        return true
+    }
 
     func applicationDidFinishLaunching(_ note: Notification) {
         ui.isLoading = { [weak self] in self?.phase != .idle }
@@ -1437,7 +1761,8 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let args = CommandLine.arguments
         let demo = args.contains("--demo")
         // 실제 사용 때만 권한 요청 창을 띄운다.
-        let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: !demo] as CFDictionary
+        let shotSettings = args.firstIndex(of: "--snapshot-settings")
+        let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: !demo && shotSettings == nil] as CFDictionary
         let trusted = AXIsProcessTrustedWithOptions(opts)
         loadTuning()
         Log.write("──── 실행 v0.1.1 trusted=\(trusted) demo=\(demo)")
@@ -1498,6 +1823,19 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
         if demo { startDemo() }
+        genWindow.onSaved = { [weak self] in self?.settings.refresh() }
+        // 동작 확인용: 설정 창을 띄워 PNG 로 저장하고 끝낸다.
+        if let i = shotSettings, i + 1 < args.count {
+            settings.show()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                self.settings.snapshot(to: URL(fileURLWithPath: args[i + 1]))
+                NSApp.terminate(nil)
+            }
+            return
+        }
+        // 평소 실행: 앱을 열면 설정 창이 보인다 (메뉴 막대 전용 앱이라 아무것도 안 뜨면 켜진 줄 모른다).
+        let testing = demo || ["--snapshot", "--import-anki", "--scope", "--gen-test"].contains { args.contains($0) }
+        if !testing { settings.show() }
         if let i = args.firstIndex(of: "--snapshot"), i + 1 < args.count {
             let dir = URL(fileURLWithPath: args[i + 1], isDirectory: true)
             let shot = { (name: String) in self.ui.snapshot(to: dir.appendingPathComponent(name)) }
@@ -1520,6 +1858,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(statusLine)
         menu.addItem(.separator())
         let items: [(String, Selector)] = [
+            ("설정 열기… (과목·덱 선택)", #selector(openMain)),
             ("카드 미리 보기 (8초)", #selector(startDemo)),
             ("Anki에서 빈칸 카드 가져오기…", #selector(importAnki)),
             ("정리본·강의록으로 O/X 만들기 (AI)…", #selector(openGen)),
@@ -1537,13 +1876,14 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         scopeMenu.delegate = self
         scopeMenu.autoenablesItems = false
         scopeItem.submenu = scopeMenu
-        menu.insertItem(scopeItem, at: 3)
+        menu.insertItem(scopeItem, at: 4)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Loading Dose 종료", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
     }
 
     private func updateStatus() {
+        settings.refreshStatus()
         statusLine.title = tap != nil
             ? "작동 중 — Claude·ChatGPT 앱에서 Enter를 누르면 카드가 뜹니다"
             : "권한 필요 — 손쉬운 사용에서 'Loading Dose'를 허용하세요"
@@ -1677,6 +2017,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
             DispatchQueue.main.async {
                 self.deck.loadAnki()
                 self.updateStatus()
+                self.settings.refresh()
                 let alert = NSAlert()
                 if let f = failure {
                     alert.messageText = "가져오지 못했습니다"

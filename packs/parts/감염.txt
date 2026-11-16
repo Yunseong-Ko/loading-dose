@@ -39,3 +39,65 @@ N. gonorrhoeae 요도염의 1차 치료제는 ceftriaxone이다. | O | 클라미
 Methicillin 감수성 S. aureus(MSSA) 감염의 1차 약제는 vancomycin이다. | X | 1차는 nafcillin, 2차는 cefazolin이며 vancomycin은 MSSA에 효과가 떨어진다.
 Necrotizing fasciitis의 1차 치료는 응급 수술적 debridement이다. | O | 병변에 비해 심한 통증과 hemorrhagic bullae가 cellulitis와의 감별점이다.
 CD4가 200/μL 미만인 HIV 환자는 TMP-SMX로 PCP 예방을 시작한다. | O | CD4 100 미만에서는 Toxoplasma, CMV, MAC 기회감염이 늘어난다.
+열사병 같은 hyperthermia 환자의 체온을 낮추는 데는 acetaminophen 같은 해열제가 효과적이다. | X | set point가 정상이라 해열제는 무효하며 physical cooling이 필요하다.
+Ceftriaxone은 Pseudomonas aeruginosa에 효과가 있는 3세대 cephalosporin이다. | X | 항녹농균 3세대는 ceftazidime이며 ceftriaxone은 녹농균을 cover하지 못한다.
+신생아 세균성 수막염의 경험적 항생제는 ampicillin과 3세대 cephalosporin 병합이다. | O | Listeria, GBS, E. coli를 cover하기 위해 ampicillin을 포함한다.
+세균성 수막염이 의심되나 뇌 CT를 먼저 찍어야 하면 항생제는 척수천자 이후로 미룬다. | X | 혈액배양만 채취한 뒤 항생제를 먼저 투여하고 영상검사와 천자를 진행한다.
+패혈성 쇼크에서 1차로 선택하는 승압제는 dopamine이다. | X | 1차 승압제는 norepinephrine이며 용량을 줄이려 vasopressin을 추가할 수 있다.
+패혈증 환자가 저혈압이거나 lactate가 4 mmol/L 이상이면 crystalloid 30 mL/kg를 투여한다. | O | 1-hour bundle에는 lactate 측정, 혈액배양, 광범위 항생제도 포함된다.
+비장절제 환자의 패혈증에는 피막 세균을 겨냥해 vancomycin과 ceftriaxone을 투여한다. | O | S. pneumoniae, N. meningitidis, H. influenzae에 취약하기 때문이다.
+S. pyogenes에 의한 괴사성 근막염에서 clindamycin을 병용하는 이유는 독소 생성 억제다. | O | 항생제는 penicillin G와 clindamycin 병합이며 응급 debridement가 필수다.
+Clostridium에 의한 gas gangrene의 항생제 치료는 metronidazole 단독 투여다. | X | penicillin과 clindamycin을 병용하고 debridement나 절단을 시행한다.
+Staphylococcal toxic shock syndrome의 손발바닥 낙설은 발진과 동시에 급성기에 나타난다. | X | 낙설은 발진 1~2주 뒤 회복기에 나타난다.
+Staphylococcal scalded skin syndrome은 점막을 침범하지 않는 점이 SJS/TEN과의 감별점이다. | O | 표피 granular layer에서 박리되어 점막이 보존되고 수분 소실 위험이 작다.
+MRSA 균혈증의 1차 약제는 vancomycin 또는 daptomycin이다. | O | 2차 약제로 linezolid, ceftaroline 등을 쓴다.
+사슬알균 인두염에서 경구 amoxicillin의 표준 치료 기간은 5일이다. | X | 급성 류마티스열 예방을 위해 penicillin이나 amoxicillin을 10일간 투여한다.
+Penicillin 알레르기가 있는 Listeria 수막염 환자의 대체 약제는 TMP-SMX다. | O | Listeria는 cephalosporin에 감수성이 없어 대안이 될 수 없다.
+전신 파상풍 환자의 1차 항생제는 IV metronidazole이다. | O | 항생제는 균 제거용이며 이미 순환하는 독소는 TIG로 중화한다.
+파상풍 접종력이 불확실한 환자의 깨끗한 경미 상처에는 Td와 TIG를 함께 투여한다. | X | 깨끗한 경미 상처에는 Td만 투여하며 TIG는 파상풍 위험 상처에서만 준다.
+세균성 수막염 환자에서 petechiae와 CSF 그람음성 쌍알균이 보이면 N. meningitidis를 의심한다. | O | 피부 발진이 다른 세균성 수막염과의 감별점이다.
+성 접촉 후 한쪽 서혜부 림프절 비대와 압통을 보이는 성병성 림프육아종의 원인균은 임균이다. | X | 원인은 Chlamydia trachomatis L1~L3 혈청형이다.
+콘택트렌즈 사용자의 녹농균 각막염에는 tobramycin 점안제를 쓴다. | O | ciprofloxacin이나 levofloxacin 점안제도 쓸 수 있다.
+장티푸스는 세균 감염이므로 말초혈액에서 백혈구 증가가 특징적이다. | X | 백혈구감소가 특징이며 relative bradycardia와 함께 진단 단서가 된다.
+장티푸스 발병 1주째에 양성률이 가장 높은 배양 검체는 대변이다. | X | 1주에는 혈액, 2주에는 소변, 3주에는 대변 배양 양성률이 높다.
+EHEC O157:H7 장염에는 HUS를 예방하기 위해 항생제를 조기에 투여한다. | X | 항생제는 toxin 분비를 늘려 HUS 위험을 높이므로 금기이며 보존적으로 치료한다.
+폐렴 환자에게 설사와 hyponatremia가 동반되면 Legionella 감염을 의심한다. | O | 40℃ 이상 고열과 β-lactam에 반응하지 않는 점도 단서다.
+생선회 섭취 수 시간 뒤 심한 상복부 통증이 생긴 고래회충증은 위내시경으로 진단하고 치료한다. | O | 유충이 위벽을 가장 흔히 침범하므로 내시경으로 확인하고 제거한다.
+요충증 진단에는 대변 충란검사가 가장 좋은 검사다. | X | 대변검사는 검출률이 낮아 셀로테이프 항문주위 도말법으로 충란을 확인한다.
+쯔쯔가무시병의 가피는 심한 통증과 가려움을 동반한다. | X | 가피는 통증과 소양감이 없고 겨드랑이, 음부처럼 접히는 부위에 흔하다.
+만성 Q fever의 가장 흔한 임상형은 심내막염이다. | O | 원인균은 Coxiella burnetii이며 흡입으로 감염되고 발진이 없다.
+발열과 의식저하 환자의 MRI에서 temporal lobe 병변이 보이면 IV acyclovir를 투여한다. | O | HSV 뇌염의 특징적 소견이며 치료가 늦으면 후유증이 남는다.
+수두 환자는 비말주의 대상이므로 일반 1인실 격리로 충분하다. | X | 수두는 공기감염이므로 음압 격리실과 N95 마스크가 필요하다.
+귀의 수포, 외이도 통증, 안면신경마비가 함께 있으면 Ramsay Hunt syndrome을 의심한다. | O | VZV가 facial nerve를 침범해 생긴다.
+대상포진의 신경통은 수포가 생기고 2~3일 지난 뒤에 시작된다. | X | 통증이 피부병변보다 48~72시간 먼저 나타난다.
+전염단핵구증에서 편도 비대로 상기도 폐쇄가 우려되면 steroid를 투여한다. | O | 자가면역 용혈빈혈, 심한 혈소판감소도 steroid 적응증이다.
+인플루엔자에 걸린 소아의 해열에는 aspirin을 쓴다. | X | Reye syndrome 위험이 있어 acetaminophen을 쓴다.
+위험한 성접촉 2~6주 뒤 발열, 인후통, 림프절비대, 발진이 생기면 급성 HIV 증후군을 의심한다. | O | 비특이적 증상이라 감기나 전염단핵구증으로 오인하기 쉽다.
+HIV 감염이 진단되면 CD4 수가 350/μL 미만으로 떨어질 때 항레트로바이러스 치료를 시작한다. | X | CD4 수치와 무관하게 가능한 한 빨리 병합요법을 시작한다.
+고위험 노출 직후 시행한 HIV 항체검사가 음성이면 감염을 배제할 수 있다. | X | window period에는 위음성이 가능하므로 일정 기간 뒤 재검한다.
+HIV 환자 혈액이 묻은 바늘에 찔린 의료인은 가능한 한 빨리 3제 이상 항바이러스제를 복용한다. | O | 먼저 상처를 흐르는 물과 비누로 씻는다.
+산소치료가 필요 없는 COVID-19 입원 환자에게도 dexamethasone을 투여한다. | X | dexamethasone은 산소치료가 필요한 환자에서만 쓴다.
+장기이식 1~4개월 뒤 발열과 백혈구감소가 생기면 CMV 감염을 의심한다. | O | 이식 후 가장 흔한 바이러스 감염이며 이 시기에 위험이 가장 크다.
+Ganciclovir 저항성 CMV 감염의 1차 선택 약제는 foscarnet이다. | O | foscarnet은 신독성, ganciclovir는 골수억제가 문제다.
+쇼크나 ileus를 동반한 fulminant C. difficile 감염에는 PO vancomycin에 IV metronidazole을 추가한다. | O | ileus에서는 경구 약제가 대장까지 도달하기 어렵기 때문이다.
+중심정맥관 감염의 원인균이 Candida이면 도관을 유지한 채 항진균제만 투여한다. | X | S. aureus, Candida, 그람음성 막대균이면 도관을 제거한다.
+수술 예방적 항생제는 피부 절개 전 1시간 이내에 투여하고 수술 후 24시간 이내에 중단한다. | O | 약제는 피부 상재균을 겨냥한 cefazolin을 주로 쓴다.
+호중구감소성 발열의 초기 경험적 항생제로 ceftriaxone 단독이 적절하다. | X | 항녹농균 β-lactam인 cefepime, piperacillin/tazobactam, carbapenem을 쓴다.
+매독 치료 후 반응을 추적할 때는 FTA-ABS 역가를 측정한다. | X | treponemal test는 평생 양성이므로 VDRL이나 RPR 역가로 추적한다.
+후기 잠복매독은 benzathine penicillin G를 1회 근주한다. | X | 후기 잠복매독은 주 1회씩 3회 근주하며 1회 요법은 조기 매독에 쓴다.
+Penicillin 알레르기가 있는 신경매독 환자는 doxycycline으로 대체 치료한다. | X | 신경매독은 desensitization 후 penicillin을 그대로 쓴다.
+진드기에 물린 자리에 이동홍반이 생긴 성인 라임병은 doxycycline으로 치료한다. | O | 소아는 amoxicillin을 쓴다.
+렙토스피라증 발병 첫 주에 균을 분리하려면 소변을 배양한다. | X | 발병 7일 이내에는 혈액, 10일 이후에는 소변에서 분리한다.
+P. vivax 말라리아는 chloroquine만으로 간의 hypnozoite까지 제거된다. | X | chloroquine은 혈중 원충만 없애므로 primaquine을 14일간 추가한다.
+말초혈액 도말에서 바나나 모양 gametocyte가 보이면 P. falciparum 감염을 시사한다. | O | ring form trophozoite는 여러 종에서 공통으로 보인다.
+말라리아 예방약 atovaquone/proguanil은 유행지역을 떠난 뒤 4주까지 복용한다. | X | 간 단계에도 작용해 7일만 복용하며, mefloquine과 doxycycline이 4주다.
+아메바성 간농양의 배농액은 anchovy paste 양상이다. | O | 발열과 우상복부 통증이 있고 CT에서 대개 단일 농양으로 보인다.
+AIDS 환자의 뇌 톡소플라즈마증은 pyrimethamine과 sulfadiazine으로 치료한다. | O | sulfadiazine 대신 clindamycin을 쓸 수 있다.
+척추 골수염 환자에게 근력저하와 배뇨장애가 생기면 epidural abscess에 의한 척수 압박을 의심한다. | O | 허리 통증과 발열만 있는 경우가 많아 초기에 의심하기 어렵다.
+발열과 혈변이 없는 수양성 설사에는 경험적으로 ciprofloxacin을 투여한다. | X | 비염증성 설사는 수액과 전해질 보충만 하고 항생제는 염증성 설사에 쓴다.
+HIV 환자의 PCP에서 저산소증이 심하면 TMP-SMX에 steroid를 병용한다. | O | 치료 초기 균 사멸에 따른 염증 악화와 호흡부전을 막기 위해서다.
+Pneumocystis jirovecii 폐렴은 객담 배양으로 확진한다. | X | 배양이 불가능하므로 GMS 염색이나 PCR로 진단한다.
+Invasive aspergillosis의 1차 치료제는 fluconazole이다. | X | 1차 치료제는 voriconazole이다.
+폐결핵 공동에 생긴 aspergilloma 환자의 대량 객혈에는 기관지동맥 색전술을 시행한다. | O | aspergilloma 자체의 1차 치료는 수술적 절제다.
+조직검사에서 격벽이 없는 넓은 균사가 직각으로 분지하면 Aspergillus를 시사한다. | X | 이는 Mucor 소견이며 Aspergillus는 격벽 있는 균사가 예각으로 분지한다.
+면역저하 환자의 침습성 aspergillosis 진단에는 galactomannan 항원검사를 이용한다. | O | 배양과 조직검사도 진단에 쓴다.

@@ -39,3 +39,66 @@ SLE의 질병 활성도를 반영하는 자가항체는 anti-Sm이다. | X | 활
 거대세포동맥염이 의심되면 실명을 막기 위해 즉시 steroid를 시작한다. | O | 혈관 생검은 skip lesion 때문에 최소 1 cm 길이로 얻는다.
 육아종증 다발혈관염(GPA)의 특징적 자가항체는 p-ANCA(anti-MPO)이다. | X | GPA는 c-ANCA(anti-PR3)이고, p-ANCA는 MPA와 EGPA에서 보인다.
 결절다발동맥염(PAN)의 신장 침범은 주로 사구체신염으로 나타난다. | X | 중혈관 혈관염이라 사구체신염은 없고 고혈압과 신기능 저하로 나타난다.
+소아 감염 관절염에서는 S. aureus, Streptococcus 외에 Kingella kingae도 흔한 원인균이다. | O | 신생아에서는 S. aureus, GBS, Gram(-) rods가 주된 원인균이다.
+감염 관절염의 관절액에서는 glucose가 증가하고 LDH가 감소한다. | X | 세균이 포도당을 소모해 glucose는 감소하고 LDH는 증가한다.
+성병 병력이 있는 젊은 성인의 감염 관절염에서 그람음성 쌍알균이 보이면 ceftriaxone을 쓴다. | O | N. gonorrhoeae 등 그람음성균이 의심될 때의 선택 약제다.
+관절 초음파에서 연골 표면을 따라 보이는 double contour sign은 CPPD의 특징적 소견이다. | X | double contour sign은 통풍 소견이고, CPPD는 연골 내 석회화를 보인다.
+급성 통풍 발작이 가장 흔히 생기는 관절은 무릎이다. | X | 통풍은 1st MTP 관절이 가장 흔하고, 무릎은 CPPD의 호발 부위다.
+신기능이 저하된 환자의 급성 통풍 발작에는 NSAIDs나 colchicine 대신 steroid를 쓴다. | O | NSAIDs와 colchicine은 신기능 저하에서 피하고 전신·관절내 steroid를 쓴다.
+Allopurinol에 의한 SJS/TEN 같은 중증 피부 이상반응은 HLA-B*5801과 연관된다. | O | 중증 피부 이상반응이 생기면 중단하고 febuxostat 등 대안을 고려한다.
+Probenecid는 xanthine oxidase를 억제하여 요산 생산을 줄이는 약이다. | X | probenecid는 요산 배설 촉진제이며 요산 요로결석 위험이 있다.
+Limited형 전신경화증에서 특히 주의할 전신 침범은 폐동맥고혈압이다. | O | diffuse형은 간질성 폐질환과 renal crisis가 대표적이다.
+전신경화증 환자의 레이노 현상에 대한 1차 약물은 β-blocker이다. | X | 1차는 nifedipine, amlodipine 같은 DHP-CCB이며 보온과 금연을 병행한다.
+레이노 현상 환자의 손톱주름 모세혈관경에서 모세혈관 수 감소와 형태 이상이 보이면 일차성이다. | X | 이는 이차성 소견이며, 일차성은 정상 hairpin 모세혈관이 다수 보인다.
+양손 손가락의 피부 경화가 MCP 관절 근위부까지 이어지면 그것만으로 전신경화증으로 분류할 수 있다. | O | ACR/EULAR 기준에서 이 항목 하나가 진단 기준점인 9점이다.
+전신경화증에 동반된 간질성 폐질환에는 mycophenolate mofetil이나 cyclophosphamide를 쓴다. | O | 항섬유화제인 nintedanib도 쓸 수 있다.
+손가락 PIP 관절의 비후성 결절을 Heberden 결절이라 한다. | X | Heberden 결절은 DIP, Bouchard 결절은 PIP 관절에 생긴다.
+NSAIDs를 쓰기 어려운 무릎 골관절염 환자에게는 관절내 steroid 주사를 쓸 수 있다. | O | 전신 부작용이 적으며 triamcinolone 등을 쓴다.
+골관절염 환자에게 연골 보호 목적으로 glucosamine과 chondroitin 복용을 권고한다. | X | 효과가 입증되지 않아 권고되지 않는다.
+골관절염 환자가 NSAIDs를 쓸 수 없을 때 통증 조절에 duloxetine을 고려할 수 있다. | O | SNRI로 중추 통증 조절 경로에 작용한다.
+류마티스 관절염의 swan neck 변형은 PIP 과신전과 DIP 굴곡으로 이루어진다. | O | 반대로 PIP 굴곡과 DIP 과신전은 boutonniere 변형이다.
+2010 ACR/EULAR 분류기준에서 총점이 6점 이상이면 definite RA로 분류한다. | O | 관절 침범, 혈청학, 염증수치, 증상 기간 항목의 점수를 합산한다.
+대칭성 다발관절염 환자에서 RF와 anti-CCP가 모두 음성이면 류마티스 관절염을 배제한다. | X | 두 항체가 모두 음성인 seronegative RA가 있어 배제할 수 없다.
+류마티스 결절은 압통이 심하고 말랑한 피하 결절이다. | X | 힘줄·관절·골막에 붙어 있는 단단하고 압통 없는 결절이다.
+Methotrexate로 조절되지 않는 류마티스 관절염에는 anti-TNF-α 같은 biologic DMARD를 추가할 수 있다. | O | leflunomide, sulfasalazine 같은 conventional DMARD 추가도 가능하다.
+베체트병과 연관된 HLA는 HLA-B27이다. | X | 베체트병은 HLA-B51, 강직성 척추염이 HLA-B27과 연관된다.
+피부를 바늘로 찌르고 24~48시간 뒤 구진이나 농포가 생기면 pathergy test 양성이다. | O | 베체트병 진단기준 항목이며 비특이적 피부 과민반응을 뜻한다.
+베체트병의 구강·생식기 궤양이 국소 steroid로 조절되지 않으면 colchicine을 쓴다. | O | 반응이 없으면 apremilast, azathioprine, anti-TNF-α를 고려한다.
+쇼그렌병의 특징적 자가항체는 anti-Jo-1이다. | X | 쇼그렌병은 anti-Ro/SS-A, anti-La/SS-B이고 anti-Jo-1은 근염 항체다.
+Schirmer test에서 5분간 젖은 길이가 5 mm 이하이면 안구 건조 양성으로 판정한다. | O | 쇼그렌병의 눈물 분비 저하를 객관적으로 평가하는 검사다.
+쇼그렌병 환자에서 침샘 비대가 지속되고 림프절이 커지면 림프종을 의심한다. | O | B세포 과활성으로 MALT lymphoma 위험이 높다.
+쇼그렌병 환자의 구강 건조를 줄이기 위해 항콜린제를 투여한다. | X | 항콜린제는 분비를 줄여 피해야 하며 pilocarpine 같은 무스카린 작용제를 쓴다.
+피부근육염의 Gottron 징후는 눈꺼풀 주위의 보라색 발진을 말한다. | X | Gottron 징후는 손 관절 신전면 병변이고, 눈꺼풀 발진은 heliotrope rash다.
+Anti-Jo-1 항체 양성인 염증성 근육병증 환자에서는 간질성 폐질환 동반 여부를 확인한다. | O | antisynthetase 증후군은 근염, 간질성 폐질환, 관절염을 보인다.
+염증성 근육병증의 근전도에서는 운동단위 활동전위(MUAP)의 진폭이 커진다. | X | 근병증에서는 진폭이 작아지며, 진폭 증가는 신경 손상 후 재지배 소견이다.
+Tocilizumab은 IL-1을 표적으로 하는 생물학적 제제이다. | X | tocilizumab은 IL-6를 억제하며, IL-1 억제제는 anakinra이다.
+Cyclosporine과 tacrolimus는 calcineurin을 억제하여 T세포 활성화를 막는다. | O | calcineurin 억제로 IL-2 전사가 줄어든다.
+Mycophenolate mofetil은 dihydrofolate reductase를 억제하여 작용한다. | X | MMF는 IMP dehydrogenase를 억제하며, DHFR 억제는 methotrexate이다.
+신생검으로 확인된 lupus nephritis가 있고 ANA가 양성이면 SLICC 기준으로 SLE로 진단할 수 있다. | O | ANA 대신 anti-dsDNA 양성이어도 된다.
+SLE의 원판상 발진(discoid rash)은 흉터를 남기지 않고 낫는다. | X | 원판상 발진은 위축성 흉터를 남기며, SLE의 탈모는 비흉터성이다.
+SLE의 관절염은 대개 골 미란을 동반하는 erosive 관절염이다. | X | SLE 관절염은 non-erosive이고, erosive 관절염은 류마티스 관절염이다.
+Lupus nephritis에서 예후가 가장 나쁜 병리 class는 class V이다. | X | 예후가 가장 나쁜 것은 diffuse proliferative형인 class IV이다.
+Lupus nephritis의 면역억제 치료에는 steroid와 함께 mycophenolate mofetil이나 cyclophosphamide를 쓴다. | O | hydroxychloroquine은 유지하고 ACEi/ARB를 추가한다.
+항인지질증후군 진단에는 항인지질 항체가 12주 이상 간격으로 2회 양성이어야 한다. | O | 감염 등에 의한 일시적 양성을 배제하기 위한 조건이다.
+혈전증 병력 없이 항인지질 항체만 양성인 무증상 환자에게는 warfarin을 투여한다. | X | 무증상 항체 양성자는 저용량 aspirin으로 예방한다.
+혈전증 병력이 있는 항인지질증후군 환자는 warfarin으로 장기 항응고 치료를 한다. | O | 임신 중에는 warfarin이 금기이므로 LMWH와 aspirin으로 바꾼다.
+Catastrophic APS는 IV steroid, heparin, 혈장교환술 또는 IVIG로 치료한다. | O | 3개 이상의 주요 장기에 동시에 혈전이 생기는 치명적 상태다.
+손가락 전체가 소시지처럼 붓는 지염(dactylitis)은 류마티스 관절염의 특징적 소견이다. | X | 지염은 건선 관절염, 반응성 관절염 등 척추관절염의 특징이다.
+반응성 관절염이 고용량 NSAIDs에 호전되지 않으면 sulfasalazine 같은 DMARD를 쓴다. | O | 항생제는 관절염 자체에는 효과가 없다.
+강직성 척추염의 주된 병태생리는 윤활막염(synovitis)이다. | X | 강직성 척추염은 부착부염이 주된 병태생리이고, 윤활막염은 RA이다.
+강직성 척추염의 가장 흔한 관절 외 증상은 급성 앞포도막염이다. | O | 주로 일측성이고 재발이 흔하다.
+강직성 척추염의 축성 증상에는 전신 steroid가 효과적이다. | X | 전신 steroid는 효과가 없고 NSAIDs가 1차 치료다.
+강직성 척추염에서 말초 관절염이 심하면 sulfasalazine을 추가할 수 있다. | O | sulfasalazine은 축성 증상에는 효과가 없다.
+강직성 척추염 환자의 요추 굴곡 제한은 modified Schober test로 평가한다. | O | 요천추접합부와 그 위 10 cm 지점을 표시하고 굴곡 시 늘어난 길이를 잰다.
+젊은 여성에서 양팔 혈압 차이와 맥박 소실이 있으면 CT/MR 동맥조영술로 Takayasu 동맥염을 확인한다. | O | 대동맥궁과 그 분지의 협착·폐쇄가 보이며 steroid로 치료한다.
+고령 환자의 측두부 두통과 씹을 때 생기는 턱 통증은 결절다발동맥염을 시사한다. | X | 턱 파행은 거대세포동맥염의 소견이다.
+결절다발동맥염(PAN)과 연관된 대표적인 바이러스 감염은 C형 간염이다. | X | PAN은 B형 간염과 연관되고, C형 간염은 cryoglobulinemic vasculitis와 연관된다.
+현미경적 다발혈관염(MPA)의 조직검사에서는 육아종을 동반한 괴사성 혈관염이 보인다. | X | MPA는 육아종이 없으며, 육아종을 동반하는 것은 GPA이다.
+천식, 호산구증가증, mononeuritis multiplex가 함께 있으면 EGPA를 의심한다. | O | p-ANCA(anti-MPO)가 양성일 수 있다.
+Cryoglobulinemic vasculitis에서는 혈청 보체가 증가한다. | X | 면역복합체에 의해 보체가 소모되어 감소하며 RF는 양성이다.
+신장을 침범한 중증 GPA의 관해 유도에는 steroid와 methotrexate를 쓴다. | X | 중증은 rituximab이나 cyclophosphamide를 쓰고, MTX는 경증에 쓴다.
+성인형 스틸병의 발진은 열이 내려도 계속 남아 있는 고정된 발진이다. | X | 발열에 맞춰 나타났다가 사라지는 일시적인 반점·구진성 홍반이다.
+내부 장기를 침범한 중증 성인형 스틸병에는 전신 steroid와 함께 anakinra를 쓴다. | O | anakinra는 IL-1 억제제이며, 경증은 NSAIDs로 시작한다.
+급성 류마티스열의 관절염은 한 관절에 고정되어 수 주간 지속되는 양상이다. | X | 수 시간마다 침범 관절이 바뀌는 이동성(migratory) 관절염이다.
+IgG4 연관질환의 1차 치료제는 rituximab이다. | X | 1차는 steroid이고, 불응 시 rituximab을 쓴다.
+곤봉지와 골막 신생골 형성이 있는 관절통 환자에서는 폐암 같은 원인 질환을 찾아야 한다. | O | 비대성 골관절증은 악성 종양, 만성 폐질환 등에 이차적으로 생긴다.

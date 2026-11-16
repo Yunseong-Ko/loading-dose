@@ -1,0 +1,103 @@
+## 생화학
+Von Gierke병은 glucose-6-phosphatase 결핍으로 심한 공복 저혈당, 젖산산증, 간비대가 나타난다. | O | 고요산혈증과 고중성지방혈증이 동반되며 잦은 탄수화물 공급으로 치료한다.
+McArdle병은 간 glycogen phosphorylase 결핍으로 공복 저혈당이 주증상이다. | X | 근육 phosphorylase 결핍으로 운동 시 근경련과 myoglobin뇨가 나타난다.
+콜레스테롤 합성의 속도조절효소는 HMG-CoA synthase이며 statin이 이를 억제한다. | X | 속도조절효소이자 statin의 표적은 HMG-CoA reductase다.
+Phenylketonuria에서는 phenylalanine hydroxylase 결핍으로 tyrosine이 필수 아미노산이 된다. | O | 조효소 tetrahydrobiopterin 결핍으로도 생기며 phenylalanine을 제한한다.
+Xeroderma pigmentosum은 nucleotide excision repair 결함으로 자외선에 의한 pyrimidine dimer를 제거하지 못한다. | O | 상염색체 열성이며 어린 나이에 피부암이 생긴다.
+유전성 과당불내증은 fructokinase 결핍으로 과당 섭취 후 저혈당과 구토가 나타난다. | X | 원인은 aldolase B 결핍이고, fructokinase 결핍은 무증상 과당뇨다.
+Isoniazid를 복용할 때 결핍되기 쉬워 함께 보충하는 비타민은 vitamin B12이다. | X | Vitamin B6(pyridoxine)가 결핍되어 말초신경병증이 생긴다.
+가족성 고콜레스테롤혈증은 LDL 수용체 결함에 의한 상염색체 우성 질환이다. | O | 힘줄 황색종과 조기 관상동맥질환이 특징이다.
+Lynch 증후군은 base excision repair 유전자 결함으로 생긴다. | X | DNA mismatch repair 결함이며 microsatellite 불안정성을 보인다.
+Tay-Sachs병은 hexosaminidase A 결핍으로 GM2 ganglioside가 축적되며 간비장비대는 없다. | O | 망막 cherry-red spot과 진행성 신경퇴행이 나타난다.
+MCAD 결핍에서는 공복 시 케톤체가 높은 저혈당이 나타난다. | X | 지방산 β산화가 안 되어 케톤을 못 만드는 저케톤성 저혈당이 특징이다.
+G6PD 결핍은 상염색체 열성으로 유전되며 NADPH 부족으로 산화 스트레스 시 용혈이 일어난다. | X | G6PD 결핍은 X연관 열성으로 유전된다.
+공복 시 glucagon은 간의 fructose-2,6-bisphosphate를 낮춰 포도당신생합성을 촉진한다. | O | 해당과정의 PFK-1은 억제되고 fructose-1,6-bisphosphatase는 활성화된다.
+Lesch-Nyhan 증후군은 adenosine deaminase 결핍으로 고요산혈증과 자해 행동이 나타난다. | X | HGPRT 결핍이 원인이고, adenosine deaminase 결핍은 SCID를 일으킨다.
+Maple syrup urine disease는 branched-chain α-ketoacid dehydrogenase 결핍으로 생긴다. | O | Leucine, isoleucine, valine과 그 α-ketoacid가 축적된다.
+Prader-Willi 증후군은 모계 유래 15번 염색체 15q11-13의 결실로 생긴다. | X | 부계 유래 결실이 원인이고, 모계 유래 결실은 Angelman 증후군이다.
+알코올 중독 환자에게 thiamine보다 포도당을 먼저 주면 Wernicke 뇌병증이 유발될 수 있다. | O | Thiamine은 pyruvate dehydrogenase의 조효소라 포도당 대사에 소모된다.
+Abetalipoproteinemia는 apoE 결함으로 chylomicron과 VLDL을 만들지 못하는 질환이다. | X | MTP 결함이 원인이고, apoE 결함은 제3형 이상지질단백혈증을 일으킨다.
+고전적 갈락토스혈증은 galactose-1-phosphate uridyltransferase 결핍으로 생긴다. | O | 수유 후 황달, 간비대, 백내장이 나타나며 유당과 갈락토스를 제한한다.
+엽산 결핍에서는 혈중 homocysteine과 methylmalonic acid가 모두 상승한다. | X | 엽산 결핍은 homocysteine만 오르고, 둘 다 오르면 vitamin B12 결핍이다.
+요소회로의 속도조절효소는 carbamoyl phosphate synthetase I이며 N-acetylglutamate가 활성화한다. | O | 미토콘드리아에 있으며 결핍되면 고암모니아혈증이 생긴다.
+Alkaptonuria는 tyrosinase 결핍으로 소변이 공기 중에서 검게 변하는 질환이다. | X | Homogentisate oxidase 결핍이고, tyrosinase 결핍은 백색증이다.
+지방산 합성의 속도조절효소는 acetyl-CoA carboxylase이며 citrate가 활성화한다. | O | Insulin은 이 효소를 활성화하고 glucagon과 palmitoyl-CoA는 억제한다.
+Pompe병은 lysosomal α-1,4-glucosidase(acid maltase) 결핍으로 영아기에 심비대가 나타난다. | O | 리소좀에 glycogen이 쌓여 심근병증과 근긴장저하가 생긴다.
+Hunter 증후군은 상염색체 열성으로 유전되며 각막 혼탁이 뚜렷하다. | X | Hunter는 X연관 열성이고 각막 혼탁이 없으며, 이 설명은 Hurler 증후군이다.
+Warfarin은 vitamin K epoxide reductase를 억제해 응고인자 II, VII, IX, X의 γ-carboxylation을 막는다. | O | Protein C와 S도 vitamin K 의존성이다.
+α-amanitin은 RNA polymerase I을 억제해 rRNA 합성을 차단한다. | X | RNA polymerase II를 억제해 mRNA 합성을 막으며 심한 간독성을 일으킨다.
+Pyruvate dehydrogenase 결핍 환자에게는 고탄수화물 식이를 준다. | X | 젖산산증이 악화되므로 고지방의 케톤생성 식이를 준다.
+Lipoprotein lipase 또는 apoC-II가 결핍되면 chylomicron이 증가해 급성 췌장염이 생길 수 있다. | O | 제1형 고지단백혈증으로 중성지방이 매우 높고 발진성 황색종이 생긴다.
+간은 ketone body를 만들지만 succinyl-CoA:acetoacetate CoA transferase가 없어 연료로 쓰지 못한다. | O | 장기 금식 때 뇌가 ketone body를 주된 연료로 쓴다.
+Orotic aciduria(UMP synthase 결핍)에서는 고암모니아혈증이 동반된다. | X | 고암모니아혈증 없이 거대적혈모구빈혈이 나타나며, 동반되면 OTC 결핍이다.
+Cystathionine β-synthase 결핍에 의한 homocystinuria의 일부는 vitamin B6 투여에 반응한다. | O | 수정체 탈구, 혈전증, 지적장애가 나타난다.
+I-cell disease에서는 lysosomal enzyme에 mannose-6-phosphate 표지가 붙지 않아 효소가 세포 밖으로 분비된다. | O | Golgi의 N-acetylglucosaminyl-1-phosphotransferase 결핍이 원인이다.
+Fragile X 증후군은 FMR1 유전자의 CAG 반복 확장으로 생긴다. | X | CGG 반복 확장이 원인이고, CAG 반복은 Huntington병이다.
+Marasmus는 단백질 결핍이 주된 원인이며 부종과 지방간이 특징이다. | X | 부종과 지방간은 kwashiorkor의 특징이고, marasmus는 총열량 결핍이다.
+과음하면 NADH/NAD+ 비가 높아져 공복 저혈당, 젖산산증, 지방간이 생긴다. | O | Pyruvate와 oxaloacetate가 lactate와 malate로 바뀌어 포도당신생합성이 막힌다.
+5-fluorouracil은 dihydrofolate reductase를 억제해 dTMP 합성을 막는다. | X | 5-FU의 표적은 thymidylate synthase이고, 설명은 methotrexate다.
+미토콘드리아 DNA 변이에 의한 질환은 어머니를 통해 자녀에게 유전된다. | O | 이환된 아버지의 자녀에게는 전달되지 않으며 heteroplasmy로 중증도가 다양하다.
+Disulfiram은 alcohol dehydrogenase를 억제해 acetaldehyde를 축적시킨다. | X | Acetaldehyde dehydrogenase를 억제하며, 설명의 효소는 fomepizole의 표적이다.
+Vitamin C는 collagen의 proline과 lysine 수산화에 필요하며 결핍되면 괴혈병이 생긴다. | O | 잇몸 출혈, 모낭 주위 출혈, 상처 치유 지연이 나타난다.
+경쟁적 저해제가 있으면 효소의 Km은 증가하고 Vmax는 변하지 않는다. | O | 기질 농도를 충분히 높이면 저해가 극복되며 Lineweaver-Burk 도표의 y절편이 같다.
+Uncompetitive 저해제는 유리 효소에만 결합해 Km을 증가시킨다. | X | 효소-기질 복합체에만 결합하며 Km과 Vmax가 함께 감소한다.
+α-helix 구조를 깨뜨리는 대표적인 아미노산은 proline과 glycine이다. | O | Proline은 고리 구조로 경직되어 있고 glycine은 자유도가 지나치게 크다.
+Glutathione은 glutamate, cysteine, glycine으로 된 tripeptide로 cysteine의 SH기가 항산화 작용을 한다. | O | 산화형 glutathione은 NADPH를 이용해 다시 환원된다.
+외인성 인슐린 주사에 의한 저혈당에서는 혈중 C-peptide가 인슐린과 함께 높게 측정된다. | X | C-peptide는 내인성 인슐린과 1:1로 분비되므로 외인성 인슐린에서는 낮다.
+헴 합성의 속도조절효소는 ALA synthase이며 조효소로 pyridoxal phosphate가 필요하다. | O | 미토콘드리아에서 succinyl-CoA와 glycine을 축합한다.
+급성 간헐성 포르피린증에서는 광과민성 피부 병변이 주된 증상이다. | X | 초기 단계 결함이라 복통과 신경 증상이 주로 나타나고 광과민성은 없다.
+2,3-BPG가 증가하면 헤모글로빈의 산소해리곡선이 좌측으로 이동한다. | X | T 상태를 안정화해 산소 친화도를 낮추므로 우측으로 이동한다.
+담관 폐쇄에 의한 황달에서는 conjugated bilirubin이 올라 소변은 진해지고 대변 색은 옅어진다. | O | 담즙이 장으로 가지 못해 stercobilin 생성이 줄기 때문이다.
+Dubin-Johnson 증후군은 UGT1A1 결핍으로 unconjugated bilirubin이 증가하는 질환이다. | X | MRP2 결함으로 conjugated bilirubin이 오르며 UGT1A1 결핍은 Gilbert 증후군이다.
+신생아 황달의 광선요법은 unconjugated bilirubin을 수용성 이성질체로 바꿔 배설시킨다. | O | 치료하지 않으면 bilirubin이 뇌에 침착해 핵황달이 생길 수 있다.
+HbA1c는 최근 1~2주 동안의 평균 혈당을 반영한다. | X | 적혈구 수명이 약 120일이므로 최근 2~3개월의 혈당을 반영한다.
+NO는 L-arginine에서 만들어져 혈관 평활근의 guanylyl cyclase를 활성화하고 cGMP를 높인다. | O | Sildenafil은 PDE5를 억제해 cGMP 분해를 막는다.
+Phospholipase A2는 막 인지질의 2번 탄소에서 지방산을 잘라 arachidonic acid를 유리시킨다. | O | Glucocorticoid는 이 단계를 억제해 eicosanoid 합성을 줄인다.
+Phospholipase C가 PIP2를 분해해 만든 DAG는 소포체에서 Ca2+를 유리시킨다. | X | Ca2+를 유리시키는 것은 IP3이고 DAG는 protein kinase C를 활성화한다.
+Statin은 간세포 내 콜레스테롤을 낮춰 SREBP2를 활성화하고 LDL 수용체 발현을 늘린다. | O | LDL 수용체 증가가 혈중 LDL 콜레스테롤이 낮아지는 주된 기전이다.
+PCSK9은 LDL 수용체의 분해를 촉진하므로 PCSK9 억제제를 쓰면 혈중 LDL이 상승한다. | X | 억제하면 LDL 수용체가 늘어 혈중 LDL이 낮아지며 evolocumab이 그 예다.
+Deoxycholic acid와 lithocholic acid는 간에서 콜레스테롤로부터 직접 합성되는 1차 담즙산이다. | X | 장내 세균이 1차 담즙산을 변형해 만드는 2차 담즙산이다.
+Chylomicron에 특징적인 apolipoprotein은 apoB-100이다. | X | Chylomicron은 apoB-48을 가지며 apoB-100은 간에서 만든 VLDL과 LDL에 있다.
+LCAT는 HDL이 받아들인 유리 콜레스테롤을 cholesteryl ester로 바꾸며 apoA-I이 이를 활성화한다. | O | 에스테르가 중심부에 쌓이면서 원반형 HDL이 구형의 성숙 HDL이 된다.
+Malonyl-CoA는 carnitine acyltransferase 1을 억제해 지방산의 미토콘드리아 진입을 막는다. | O | 지방산 합성과 β산화가 동시에 일어나는 것을 방지한다.
+지방세포에는 glycerol kinase가 풍부해 지방 분해로 나온 glycerol을 지방세포가 바로 재이용한다. | X | 지방세포에는 이 효소가 없어 glycerol은 간으로 가서 포도당신생합성에 쓰인다.
+Refsum병은 peroxisome의 α산화 장애로 phytanic acid가 축적되는 질환이다. | O | Phytanic acid는 β 탄소의 methyl기 때문에 바로 β산화될 수 없다.
+지방세포의 hormone-sensitive lipase는 insulin 신호에 의해 인산화되어 활성화된다. | X | Glucagon과 epinephrine이 cAMP와 PKA를 통해 활성화하고 insulin은 억제한다.
+케톤체 합성의 속도조절효소는 미토콘드리아의 HMG-CoA synthase이다. | O | 케톤체는 간의 미토콘드리아에서 만들어져 말초조직에서 쓰인다.
+당뇨병케톤산증의 치료는 수액과 insulin 투여이며 혈중 K+를 함께 감시한다. | O | Insulin이 지방 분해와 케톤 생성을 막고 수액이 탈수를 교정한다.
+당뇨병케톤산증에서는 anion gap이 정상인 대사성 산증이 나타난다. | X | 케톤산이 축적되어 anion gap이 증가한 대사성 산증이 나타난다.
+지방산 합성을 위해 미토콘드리아의 acetyl-CoA는 carnitine과 결합한 형태로 세포질로 나온다. | X | Citrate 형태로 나오며 carnitine은 지방산을 미토콘드리아 안으로 옮긴다.
+Gaucher병은 glucocerebrosidase 결핍으로 간비장비대와 골 병변이 나타난다. | O | 가장 흔한 sphingolipidosis이며 구겨진 종이 모양의 대식세포가 보인다.
+Fabry병은 α-galactosidase A 결핍에 의한 상염색체 열성 질환이다. | X | X연관 열성이며 말초 신경통, angiokeratoma, 신부전이 나타난다.
+Ornithine transcarbamoylase 결핍은 상염색체 열성으로 유전되는 가장 흔한 요소회로 이상이다. | X | X연관으로 유전되며 고암모니아혈증과 함께 orotic acid가 증가한다.
+Cyanide는 전자전달계의 complex I을 억제해 세포 호흡을 차단한다. | X | Cyanide는 complex IV를 억제하며 complex I 억제제는 rotenone이다.
+Oligomycin으로 ATP synthase를 막으면 전자전달과 산소 소모도 함께 감소한다. | O | 양성자 기울기가 커져 양성자 펌프가 멈추기 때문이다.
+2,4-dinitrophenol 같은 uncoupler를 투여하면 미토콘드리아의 산소 소모가 감소한다. | X | 양성자 기울기가 해소되어 산소 소모는 늘고 ATP 대신 열이 발생한다.
+Glucokinase는 hexokinase보다 Km이 낮아 낮은 혈당에서도 쉽게 포화된다. | X | Km이 높아 고혈당에서 활발하며 간과 췌장 β세포에서 포도당 감지기 역할을 한다.
+Pyruvate carboxylase는 biotin을 조효소로 쓰며 acetyl-CoA에 의해 활성화된다. | O | 금식으로 β산화가 늘면 pyruvate가 oxaloacetate로 가서 포도당신생합성에 쓰인다.
+짝수 탄소 지방산에서 나온 acetyl-CoA는 포도당신생합성의 탄소 공급원이 된다. | X | PDH 반응이 비가역이라 불가능하며 기질은 lactate, glycerol, 아미노산이다.
+간세포의 포도당 유입은 insulin 의존성 운반체인 GLUT4를 통해 일어난다. | X | 간은 insulin 비의존성 GLUT2를 쓰고 GLUT4는 근육과 지방조직에 있다.
+근육에는 glucagon 수용체가 없어 근육 글리코겐 분해는 epinephrine, Ca2+, AMP가 조절한다. | O | 근육에는 glucose-6-phosphatase도 없어 혈당을 직접 올리지 못한다.
+PDH complex는 acetyl-CoA와 NADH가 많으면 PDH kinase에 의해 인산화되어 불활성화된다. | O | 금식 때 pyruvate를 아껴 포도당신생합성으로 돌리는 기전이다.
+TCA 회로에서 기질수준 인산화로 GTP를 만드는 효소는 succinate dehydrogenase이다. | X | GTP는 succinyl-CoA synthetase가 만들고 succinate dehydrogenase는 FADH2를 만든다.
+Allopurinol은 HGPRT를 억제해 요산 생성을 줄이는 통풍 치료제이다. | X | Xanthine oxidase를 억제해 hypoxanthine과 xanthine이 요산으로 되는 것을 막는다.
+6-mercaptopurine을 쓰는 환자에게 allopurinol을 병용하면 6-mercaptopurine의 독성이 커진다. | O | 6-mercaptopurine이 xanthine oxidase로 분해되기 때문이다.
+Adenosine deaminase 결핍에서는 dATP가 축적되어 ribonucleotide reductase가 억제된다. | O | 다른 dNTP가 부족해져 림프구의 DNA 합성이 막힌다.
+Hydroxyurea는 thymidylate synthase를 억제해 DNA 합성을 막는다. | X | Hydroxyurea의 표적은 ribonucleotide reductase이다.
+Methotrexate의 독성은 leucovorin(folinic acid)을 투여해 줄일 수 있다. | O | Dihydrofolate reductase를 거치지 않고 환원형 엽산을 공급하기 때문이다.
+Sulfonamide는 세균의 dihydrofolate reductase를 억제하는 PABA 유사체이다. | X | Dihydropteroate synthase를 억제하며 dihydrofolate reductase 억제제는 trimethoprim이다.
+Acyclovir는 바이러스의 thymidine kinase에 의해 인산화되어야 활성을 나타낸다. | O | Guanosine 유사체로 herpes 바이러스 감염 세포에 선택적으로 작용한다.
+Zidovudine(AZT)은 HIV의 protease를 억제하는 thymidine 유사체이다. | X | 3'-OH가 없어 역전사효소에 의한 DNA 사슬 연장을 종결시킨다.
+Telomerase는 자체 RNA를 주형으로 텔로미어를 연장하는 역전사효소이다. | O | 텔로미어는 TTAGGG 반복 서열이며 암세포에서 telomerase 활성이 높다.
+Rifampicin은 세균의 DNA gyrase를 억제해 항균 작용을 나타낸다. | X | 세균 RNA polymerase의 β subunit에 결합해 전사를 억제한다.
+BRCA 변이가 있는 암세포는 homologous recombination 수선에 결함이 있어 PARP 억제제에 민감하다. | O | BRCA 변이는 유방암과 난소암의 위험을 높인다.
+Diphtheria toxin은 eEF2를 ADP-ribosylation하여 번역의 신장 단계를 억제한다. | O | eEF2는 리보솜을 한 코돈씩 이동시키는 translocation을 담당한다.
+히스톤의 lysine이 acetylation되면 염색질이 응축되어 전사가 억제된다. | X | Acetylation은 염색질을 느슨하게 해 전사를 활성화하며 HDAC이 그 반대로 작용한다.
+Ghrelin은 공복 시 위에서 분비되어 시상하부의 NPY 뉴런을 자극해 식욕을 촉진한다. | O | 위소매절제술 뒤에는 ghrelin이 줄어 식욕이 감소한다.
+Leptin은 지방조직에서 분비되어 시상하부의 NPY 뉴런을 활성화해 식욕을 높인다. | X | NPY 뉴런을 억제하고 POMC 뉴런을 활성화해 식욕을 억제한다.
+Orlistat은 췌장 lipase를 억제해 지방 흡수를 줄이며 지방변이 흔한 부작용이다. | O | 지용성 비타민의 흡수도 함께 떨어질 수 있다.
+Pellagra는 riboflavin 결핍으로 설사, 피부염, 치매가 나타나는 질환이다. | X | Niacin(vitamin B3) 결핍이 원인이다.
+Vitamin B6가 결핍되면 ALA synthase 활성이 떨어져 sideroblastic anemia가 생길 수 있다. | O | Pyridoxal phosphate는 헴 합성 첫 단계와 transamination의 조효소다.
+Vitamin B12는 intrinsic factor와 결합해 공장에서 흡수된다. | X | 위 벽세포가 분비한 intrinsic factor와 결합해 말단 회장에서 흡수된다.
+Vitamin B12 결핍 환자에게 엽산만 보충하면 빈혈은 호전되어도 신경 손상은 진행한다. | O | 거대적혈모구빈혈에 신경 증상이 있으면 vitamin B12 결핍을 먼저 의심한다.
+Cori 회로에서는 근육의 alanine이 간으로 가서 포도당신생합성에 쓰인다. | X | Cori 회로의 기질은 lactate이고 alanine을 쓰는 것은 glucose-alanine 회로다.

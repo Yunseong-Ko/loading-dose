@@ -1,10 +1,31 @@
-# Loading Dose
+<p align="center">
+  <img src="assets/icon.png" width="120" alt="Loading Dose 아이콘">
+</p>
+
+<h1 align="center">Loading Dose</h1>
+
+<p align="center">
+  <b>로딩 중에 한 문제씩.</b><br>
+  Claude나 ChatGPT의 답을 기다리는 몇 초 동안 국시 O/X 문제를 띄워 줍니다.
+</p>
+
+<p align="center">
+  <a href="https://github.com/Yunseong-Ko/loading-dose/releases/latest"><b>내려받기 (Mac 앱 · 크롬 확장)</b></a>
+  &nbsp;·&nbsp;
+  <a href="assets/demo.mp4">영상으로 보기 (MP4)</a>
+</p>
+
+<p align="center">
+  <img src="assets/demo.gif" width="800" alt="질문을 보내면 화면 위에 O/X 카드가 뜨고, 답변이 도착하면 접히는 모습">
+</p>
 
 Claude나 ChatGPT에 질문을 보내고 답을 기다리는 몇 초 동안, 화면 위에 의사 국가시험(KMLE) 대비 문제를 한 문항씩 띄워 주는 도구입니다. 답변이 도착하면 알아서 접힙니다.
 
+위 영상은 동작을 설명하려고 그린 시연이며 실제 화면 녹화가 아닙니다. 채팅 화면은 특정 서비스의 화면이 아닌 중립적인 그림입니다.
+
 이름은 약리학의 부하 용량(loading dose)에서 땄습니다. 로딩 중에 한 문제씩 투여합니다.
 
-- **Mac 앱**: Claude·ChatGPT 데스크톱 앱에서 동작합니다. 메뉴 막대에 `⏎`로 상주합니다.
+- **Mac 앱**: Claude·ChatGPT 데스크톱 앱에서 동작합니다. 메뉴 막대에 `⏎`로 상주하고, 앱을 열면 과목과 덱을 고르는 설정 창이 뜹니다.
 - **크롬 확장**: claude.ai, chatgpt.com 에서 동작합니다.
 
 테스트 버전입니다. Mac 앱은 Claude 데스크톱 앱에서 동작을 확인했고, ChatGPT 데스크톱 앱과 크롬 확장은 실제 사이트에서 아직 확인하지 못했습니다.
@@ -13,7 +34,7 @@ Claude나 ChatGPT에 질문을 보내고 답을 기다리는 몇 초 동안, 화
 
 | 소스 | 설명 | Mac 앱 | 크롬 확장 |
 |---|---|---|---|
-| 기본 제공 퀴즈 | 20개 과목 O/X 780문항 ([packs/kmle.txt](packs/kmle.txt)). 과목별로 켜고 끌 수 있습니다. | O | O |
+| 기본 제공 퀴즈 | 기초과목을 포함한 25개 과목 O/X 약 2,800문항 ([packs/kmle.txt](packs/kmle.txt)). 과목별로 켜고 끌 수 있습니다. | O | O |
 | Anki 빈칸 카드 | 내 Anki의 Cloze 카드를 읽어 덱 단위로 시험범위를 고릅니다. Anki 원본은 바꾸지 않습니다. | 직접 읽기 | 내보내기 파일(.txt) 불러오기 |
 | 정리본·강의록 | 붙여넣은 글이나 PDF로 Claude API가 O/X 문항을 만듭니다. 본인 API 키가 필요합니다. | O | 없음 |
 | 직접 쓴 문제 | `문장 \| O 또는 X \| 해설` 형식의 텍스트 | O | O |
@@ -50,6 +71,7 @@ tools/merge_pack.py                              parts → kmle.txt (형식·중
 tools/build_pack.py                              kmle.txt → pack.js
 test.html                                        크롬 확장 카드 동작을 보는 가짜 채팅 페이지
 배포/                                             배포용 설치 안내 (압축 파일은 저장소에 넣지 않음)
+assets/                                          README용 아이콘과 시연 영상 (tools/demo_video.swift 로 생성)
 ```
 
 문항을 고친 뒤에는 `tools/merge_pack.py`, `tools/build_pack.py`, `mac/build.sh` 순서로 실행합니다.
