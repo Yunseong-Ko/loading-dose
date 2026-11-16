@@ -19,11 +19,19 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build
         run: dotnet build windows/LoadingDose.csproj -c Release -o out
-      - name: Check output
+      - name: Self test (card drawing, deck, key hook, UI Automation)
         shell: pwsh
         run: |
           Get-Item out/LoadingDose.exe | Format-List Name, Length
-          Compress-Archive -Path out/LoadingDose.exe -DestinationPath LoadingDose-Windows.zip
+          $p = Start-Process -FilePath out/LoadingDose.exe -ArgumentList '--selftest', 'selftest' -Wait -PassThru
+          if (Test-Path selftest/result.txt) { Get-Content selftest/result.txt -Encoding utf8 }
+          if ($p.ExitCode -ne 0) { throw "self test failed with exit code $($p.ExitCode)" }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: selftest
+          path: selftest
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
           name: LoadingDose-Windows

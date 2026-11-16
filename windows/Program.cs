@@ -573,6 +573,18 @@ namespace LoadingDose
             Relayout();
         }
 
+        // 동작 확인용 (--selftest): 지금 모습을 PNG 로 저장하고, 알약으로 접는다.
+        public void Snapshot(string path)
+        {
+            using (var bmp = new Bitmap(Width, Height))
+            {
+                DrawToBitmap(bmp, new Rectangle(0, 0, Width, Height));
+                bmp.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+            }
+        }
+
+        public void CollapseNow() { Collapse(); }
+
         void NextOrCollapse()
         {
             if (IsLoading()) NewCard(); else Collapse();
@@ -1071,11 +1083,104 @@ namespace LoadingDose
         }
     }
 
+    // 빌드 서버(Windows)에서 돌리는 자체 점검: 카드 그리기, 문제 읽기, 키 감지 설치, 화면 요소 판독을 실제로 실행해 본다.
+    // 실제 Claude·ChatGPT 앱과의 연동은 여기서 확인되지 않는다.
+    static class SelfTest
+    {
+        public static int Run(string dir)
+        {
+            Directory.CreateDirectory(dir);
+            var report = new StringBuilder();
+            bool ok = true;
+            Action<string, bool> check = (name, pass) =>
+            {
+                report.AppendLine((pass ? "PASS " : "FAIL ") + name);
+                if (!pass) ok = false;
+            };
+            try
+            {
+                var deck = new Deck();
+                check("기본 제공 문제 " + deck.BuiltinCount + "개, 과목 " + deck.Topics.Count + "개", deck.BuiltinCount > 100 && deck.Topics.Count > 5);
+                Card c = deck.Pick();
+                check("문제 뽑기: [" + c.Topic + "] " + c.Q, c.Q.Length > 0);
+
+                var hook = new KeyHook();
+                check("키 감지 설치", hook.Install());
+                hook.Dispose();
+
+                var ui = new QuizForm(deck);
+                bool loading = true;
+                ui.IsLoading = () => loading;
+
+                var probe = new Form { Text = "probe", StartPosition = FormStartPosition.Manual, Bounds = new Rectangle(60, 420, 360, 160) };
+                probe.Controls.Add(new Button { Text = "보내기", Bounds = new Rectangle(20, 20, 140, 40) });
+                probe.Controls.Add(new Button { Text = "응답 중지", Bounds = new Rectangle(180, 20, 140, 40) });
+                probe.Show();
+
+                string scan = null, dump = null;
+                int step = 0;
+                var timer = new WinTimer { Interval = 700 };
+                timer.Tick += (s, e) =>
+                {
+                    try
+                    {
+                        step++;
+                        if (step == 1) ui.StartCard(Screen.PrimaryScreen.WorkingArea);
+                        else if (step == 2) { ui.Snapshot(Path.Combine(dir, "1-ask.png")); check("질문 카드 표시", ui.CanAnswer); ui.Answer(true); }
+                        else if (step == 3) { ui.Snapshot(Path.Combine(dir, "2-graded.png")); check("채점 뒤 답 입력 잠김", !ui.CanAnswer); loading = false; ui.MarkDone(7); }
+                        else if (step == 4) { ui.Snapshot(Path.Combine(dir, "3-done.png")); ui.CollapseNow(); }
+                        else if (step == 5)
+                        {
+                            ui.Snapshot(Path.Combine(dir, "4-pill.png"));
+                            check("알약 크기 " + ui.Width + "x" + ui.Height, ui.Height < ui.Width / 3);
+                            IntPtr h = probe.Handle;
+                            Scanner.FindStop(h, (found, label, count, ms) =>
+                            {
+                                scan = "found=" + found + " label=\"" + label + "\" 버튼 " + count + "개 ms=" + ms;
+                                dump = Scanner.Dump(h);
+                            });
+                        }
+                        else if ((scan != null && dump != null) || step > 20)
+                        {
+                            timer.Stop();
+                            check("화면 요소 판독: " + (scan ?? "응답 없음"), scan != null && scan.StartsWith("found=True"));
+                            report.AppendLine("판독 목록:");
+                            report.AppendLine(dump ?? "(없음)");
+                            Application.ExitThread();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        timer.Stop();
+                        check("실행 중 오류: " + ex, false);
+                        Application.ExitThread();
+                    }
+                };
+                timer.Start();
+                Application.Run();
+            }
+            catch (Exception ex)
+            {
+                check("오류: " + ex, false);
+            }
+            report.AppendLine(ok ? "결과: 통과" : "결과: 실패");
+            File.WriteAllText(Path.Combine(dir, "result.txt"), report.ToString(), new UTF8Encoding(false));
+            return ok ? 0 : 1;
+        }
+    }
+
     static class Program
     {
         [STAThread]
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
+            int at = Array.IndexOf(args, "--selftest");
+            if (at >= 0)
+            {
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                return SelfTest.Run(at + 1 < args.Length ? args[at + 1] : "selftest");
+            }
             bool created;
             using (var mutex = new Mutex(true, "LoadingDose.SingleInstance", out created))
             {
@@ -1083,7 +1188,7 @@ namespace LoadingDose
                 {
                     MessageBox.Show("Loading Dose 가 이미 실행 중입니다.\n작업 표시줄 오른쪽(숨겨진 아이콘 ^ 안)의 아이콘을 오른쪽 클릭하세요.",
                         "Loading Dose", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
+                    return 0;
                 }
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
@@ -1092,6 +1197,7 @@ namespace LoadingDose
                 Application.Run(new TrayApp(args.Contains("--demo")));
                 GC.KeepAlive(mutex);
             }
+            return 0;
         }
     }
 }
