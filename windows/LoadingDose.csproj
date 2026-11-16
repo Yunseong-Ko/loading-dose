@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- .NET Framework 4.8 은 Windows 10/11 에 기본으로 들어 있어, 실행 파일 하나만 배포하면 된다. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>LoadingDose</AssemblyName>
+    <RootNamespace>LoadingDose</RootNamespace>
+    <LangVersion>7.3</LangVersion>
+    <Version>0.1.0</Version>
+    <Product>Loading Dose</Product>
+    <Description>AI 답변을 기다리는 동안 O/X 복습</Description>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <DebugType>none</DebugType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="UIAutomationClient" />
+    <Reference Include="UIAutomationTypes" />
+    <Reference Include="WindowsBase" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- 기본 제공 퀴즈를 실행 파일 안에 넣는다. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\packs\kmle.txt" LogicalName="kmle.txt" Link="kmle.txt" />
+  </ItemGroup>
+
+</Project>

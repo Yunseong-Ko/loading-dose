@@ -1,0 +1,30 @@
+name: windows
+
+on:
+  push:
+    branches: [windows, main]
+    paths:
+      - 'windows/**'
+      - 'packs/kmle.txt'
+      - '.github/workflows/windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: dotnet build windows/LoadingDose.csproj -c Release -o out
+      - name: Check output
+        shell: pwsh
+        run: |
+          Get-Item out/LoadingDose.exe | Format-List Name, Length
+          Compress-Archive -Path out/LoadingDose.exe -DestinationPath LoadingDose-Windows.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LoadingDose-Windows
+          path: out/LoadingDose.exe
