@@ -1,0 +1,105 @@
+## 약리학
+1차 제거를 따르는 약물은 일정하게 투여하면 반감기의 4~5배가 지나 항정상태에 도달한다. | O | 도달 시간은 반감기로 정해지며 용량이나 투여 간격과는 무관하다.
+heparin 과량에 의한 출혈에는 해독제로 vitamin K를 투여한다. | X | heparin의 해독제는 protamine sulfate이고 vitamin K는 warfarin에 쓴다.
+ACE 억제제의 마른기침은 bradykinin 분해가 억제되어 축적되기 때문이다. | O | ARB는 bradykinin 분해에 영향을 주지 않아 기침이 드물다.
+부하용량은 목표 혈중농도에 청소율을 곱해 구한다. | X | 부하용량은 목표 농도×분포용적이고, 청소율은 유지용량을 정한다.
+aminoglycoside는 세균 리보솜 50S 소단위에 결합해 단백질 합성을 억제한다. | X | 30S 소단위에 결합하며 대표 부작용은 신독성과 이독성이다.
+acetaminophen 과량 복용의 해독제는 N-acetylcysteine이다. | O | 독성 대사체 NAPQI를 해독하는 glutathione을 보충한다.
+경쟁적 길항제를 추가하면 작용제 용량-반응 곡선의 최대 효과(Emax)가 낮아진다. | X | 경쟁적 길항은 곡선을 오른쪽으로 옮기며 Emax 감소는 비경쟁적 길항이다.
+유기인계 살충제 중독에는 atropine과 pralidoxime을 투여한다. | O | pralidoxime은 인산화된 acetylcholinesterase를 재활성화한다.
+cisplatin의 특징적 독성은 출혈성 방광염이며 mesna로 예방한다. | X | 이는 cyclophosphamide의 독성이며 cisplatin은 신독성과 이독성이 특징이다.
+amiodarone은 폐섬유화, 갑상샘 기능 이상, 간독성, 각막 침착을 일으킬 수 있다. | O | 요오드를 함유한 class III 항부정맥제로 반감기가 매우 길다.
+furosemide는 원위곱슬세관의 Na-Cl 공동수송체를 억제한다. | X | 헨레고리 굵은 오름다리의 Na-K-2Cl 공동수송체를 억제한다.
+benzodiazepine은 GABA-A 수용체 Cl- 통로의 열림 지속시간을 늘린다. | X | 열림 빈도를 늘리며, 지속시간을 늘리는 것은 barbiturate이다.
+vancomycin은 펩티도글리칸 전구체의 D-Ala-D-Ala 말단에 결합해 세포벽 합성을 억제한다. | O | 빠르게 정주하면 histamine 유리로 red man 증후군이 생긴다.
+phenytoin, ethanol, 고용량 aspirin은 대사 효소가 포화되어 0차 제거를 보인다. | O | 0차 제거에서는 농도와 무관하게 단위 시간당 일정량이 제거된다.
+phenylephrine은 β1 수용체 작용제로 심박수를 직접 증가시킨다. | X | α1 작용제로 혈압을 올리며 반사성 서맥을 일으킨다.
+doxorubicin의 용량 의존적 심근병증은 dexrazoxane으로 예방할 수 있다. | O | 철을 킬레이트하여 자유라디칼에 의한 심근 손상을 줄인다.
+digoxin 독성은 고칼륨혈증이 있을 때 더 잘 생긴다. | X | 저칼륨혈증에서 digoxin이 Na+/K+-ATPase에 더 잘 결합해 독성이 커진다.
+metformin은 드물게 젖산산증을 일으키므로 중증 신기능 저하에서 금기이다. | O | 간의 포도당신생합성을 억제하며 단독으로는 저혈당이 드물다.
+rifampin은 CYP450을 억제하여 warfarin의 항응고 효과를 증강시킨다. | X | rifampin은 강력한 CYP 유도제로 warfarin의 효과를 떨어뜨린다.
+SSRI와 MAO 억제제를 병용하면 신경이완제 악성증후군이 생긴다. | X | serotonin 증후군이 생기며 고열, 간대성 근경련, 자율신경 불안정을 보인다.
+warfarin은 vitamin K epoxide reductase를 억제해 II, VII, IX, X 인자의 활성화를 막는다. | O | 효과는 PT(INR)로 감시하며 기형 유발성 때문에 임신 중 금기이다.
+atropine 중독의 해독제는 neostigmine이다. | X | 혈액뇌장벽을 통과하는 3차 아민인 physostigmine을 쓴다.
+비선택적 β차단제인 propranolol은 천식 환자에서 기관지 수축을 유발할 수 있다. | O | β2 수용체 차단 때문이며 저혈당의 빈맥 증상도 가릴 수 있다.
+amphotericin B는 ergosterol 합성을 억제하여 항진균 작용을 나타낸다. | X | ergosterol에 결합해 막에 구멍을 내며, 합성 억제는 azole의 기전이다.
+lithium은 신성 요붕증, 갑상샘기능저하증, 떨림을 일으킬 수 있다. | O | 치료 범위가 좁고 thiazide나 NSAID 병용 시 혈중 농도가 오른다.
+verapamil은 dihydropyridine계 칼슘통로차단제로 반사성 빈맥을 흔히 일으킨다. | X | non-dihydropyridine계로 심장에 작용해 서맥, 방실차단, 변비를 일으킨다.
+methotrexate는 dihydrofolate reductase를 억제하며 독성은 leucovorin으로 구제한다. | O | leucovorin은 환원형 엽산이라 억제된 효소를 우회해 정상 세포를 구한다.
+carbidopa는 혈액뇌장벽을 통과해 뇌 안에서 levodopa의 대사를 억제한다. | X | 혈액뇌장벽을 통과하지 못해 말초의 dopa decarboxylase만 억제한다.
+thiazide 이뇨제는 고칼슘혈증, 고요산혈증, 고혈당을 일으킬 수 있다. | O | loop 이뇨제는 반대로 소변 칼슘 배설을 늘린다.
+succinylcholine은 비탈분극성 근이완제로 neostigmine으로 작용이 역전된다. | X | 탈분극성 근이완제이며 고칼륨혈증과 악성고열증을 일으킬 수 있다.
+fluoroquinolone은 DNA gyrase를 억제하며 힘줄 파열과 QT 연장을 일으킬 수 있다. | O | 연골 손상 우려로 소아와 임신부에서는 사용을 피한다.
+ethambutol의 대표 부작용은 말초신경병증이며 pyridoxine으로 예방한다. | X | 이는 isoniazid의 내용이며 ethambutol은 시신경염과 적록 색각 이상을 일으킨다.
+흡입마취제나 succinylcholine에 의한 악성고열증의 치료제는 dantrolene이다. | O | 근소포체의 ryanodine 수용체를 막아 Ca2+ 유리를 억제한다.
+cyclosporine은 mTOR를 억제하여 T세포 증식을 막는다. | X | calcineurin을 억제해 IL-2 전사를 막으며, mTOR 억제제는 sirolimus이다.
+역가(potency)가 높은 약물은 같은 효과를 내는 데 필요한 용량(EC50)이 작다. | O | 효능(efficacy)은 최대 효과 Emax의 크기로 역가와 별개의 개념이다.
+carbamazepine은 CYP450 억제제로 병용 약물의 혈중 농도를 높인다. | X | CYP 유도제로 병용 약물 농도를 낮추며 경구피임약 효과도 떨어뜨린다.
+metronidazole 복용 중 음주하면 disulfiram 유사 반응이 나타난다. | O | acetaldehyde가 축적되어 홍조, 구역, 구토, 빈맥이 생긴다.
+aspirin은 COX를 가역적으로 억제하여 혈소판 응집을 막는다. | X | COX를 비가역적으로 acetyl화하여 혈소판 수명 동안 효과가 지속된다.
+sulfonylurea는 췌장 β세포의 ATP 민감성 K+ 통로를 닫아 insulin 분비를 늘린다. | O | 혈당과 무관하게 분비를 자극하므로 저혈당과 체중 증가가 부작용이다.
+장기간 쓰던 glucocorticoid를 갑자기 중단하면 급성 부신기능저하증이 올 수 있다. | O | 시상하부-뇌하수체-부신 축이 억제되어 있으므로 서서히 감량한다.
+부분 효현제를 완전 효현제와 병용하면 완전 효현제의 효과를 더 키우는 상승작용을 나타낸다. | X | 같은 수용체를 두고 경쟁하므로 완전 효현제에 대해 길항제처럼 작용한다.
+잉여수용체(spare receptor)가 있는 조직에서는 효현제의 EC50이 Kd보다 낮다. | O | 수용체의 일부만 점유해도 최대 반응에 도달하기 때문이다.
+치료지수(TI)가 넓은 약물일수록 치료적 약물농도 감시(TDM)가 더 필요하다. | X | 치료 범위가 좁아 독성 여유가 적은 약물이 TDM 대상이다.
+협심증 발작 때 nitroglycerin을 설하로 투여하는 것은 간의 일차통과효과를 피하기 위해서이다. | O | 경구로 투여하면 간에서 대부분 대사되어 생체이용률이 낮다.
+지용성이 높아 조직에 많이 결합하는 약물은 분포용적(Vd)이 작다. | X | 조직 결합이 많을수록 혈장 농도가 낮아져 분포용적이 커진다.
+isoniazid를 phenytoin과 병용하면 phenytoin의 혈중 농도가 낮아진다. | X | isoniazid는 CYP 억제제라 phenytoin 농도가 올라 독성이 생길 수 있다.
+건강한 자원자에게 처음 투여하여 안전성, 내약성, 약동학을 평가하는 단계는 제2상 임상시험이다. | X | 제1상이며 제2상은 소규모 환자에서 효능 탐색과 용량 결정을 한다.
+celecoxib은 비선택적 NSAID보다 위장관 부작용은 적지만 심혈관 혈전 위험을 높일 수 있다. | O | 혈소판 TXA2는 그대로 두고 내피세포의 PGI2 생성만 줄이기 때문이다.
+NSAID 유발 위궤양 예방에 쓰는 misoprostol은 임신부에게도 안전하게 쓸 수 있다. | X | PGE1 유사체로 자궁 수축을 일으켜 유산 위험이 있으므로 임신부 금기이다.
+salicylate 중독에서는 소변을 산성화하여 약물 배설을 촉진한다. | X | 약산이므로 sodium bicarbonate로 소변을 알칼리화해야 배설이 늘어난다.
+바이러스 감염으로 열이 나는 소아에게 aspirin을 투여하면 Reye 증후군이 생길 수 있다. | O | 간부전과 뇌병증이 나타나므로 소아 해열에는 acetaminophen을 쓴다.
+변이형 협심증의 1차 약물은 propranolol이다. | X | 관상동맥 연축이 원인이라 CCB를 쓰며 β차단제는 연축을 악화시킬 수 있다.
+nitrate를 복용 중인 환자에게 sildenafil을 병용하면 심한 저혈압이 생길 수 있어 금기이다. | O | 둘 다 혈관 평활근의 cGMP를 늘려 혈관 확장 효과가 겹친다.
+ACE 억제제는 임신 중 고혈압에 우선 선택하는 약물이다. | X | RAAS 억제제는 태아 신장 독성 때문에 임신부 금기이며 labetalol 등을 쓴다.
+단백뇨가 있는 당뇨병성 신증 환자의 고혈압에는 ACE 억제제가 우선 권장된다. | O | 수출세동맥을 확장해 사구체내압과 단백뇨를 줄인다.
+ACE 억제제와 spironolactone을 병용하면 저칼륨혈증 위험이 커진다. | X | 둘 다 K+ 배설을 줄이므로 고칼륨혈증 위험이 커진다.
+박출률 저하 심부전에서 bisoprolol, carvedilol, metoprolol succinate는 사망률을 낮춘다. | O | 교감신경 과활성을 차단해 심근 재형성을 억제하며 소량부터 서서히 증량한다.
+digoxin 중독에서는 오심·구토와 함께 사물이 노랗게 보이는 시각 이상이 나타날 수 있다. | O | 심해지면 세포 내 Ca2+ 과부하로 여러 형태의 부정맥이 생긴다.
+발작성 심실상성 빈맥(PSVT)의 급성 종료에 쓰는 속효성 정맥 약물은 lidocaine이다. | X | 방실결절을 일시적으로 차단하는 adenosine을 쓰며 반감기가 수 초로 짧다.
+anaphylaxis의 1차 약물은 epinephrine이다. | O | α1 작용으로 혈압을 유지하고 β2 작용으로 기관지를 확장한다.
+갈색세포종 수술 전 처치에서는 β차단제를 먼저 투여한 뒤 α차단제를 추가한다. | X | α차단제를 먼저 써야 하며 β차단제부터 쓰면 혈압이 급등할 수 있다.
+인지 저하가 우려되는 고령의 과민성 방광 환자에게는 oxybutynin보다 mirabegron을 우선 고려한다. | O | β3 작용제로 방광을 이완시키며 항콜린성 부작용이 없다.
+금연 보조제 varenicline은 니코틴 수용체의 완전 길항제이다. | X | α4β2 니코틴 수용체의 부분 작용제로 금단 증상과 흡연 보상을 함께 줄인다.
+donepezil은 acetylcholinesterase를 억제하며 부작용으로 빈맥이 흔하다. | X | 콜린성 자극으로 서맥과 오심, 구토, 설사가 생긴다.
+imatinib은 BCR-ABL tyrosine kinase를 억제하며 만성 골수성 백혈병에 쓴다. | O | c-KIT도 억제하므로 위장관 기질종양(GIST)에도 쓴다.
+cetuximab은 KRAS 돌연변이가 있는 대장암에서 효과가 더 좋다. | X | EGFR 하류의 RAS가 변이되어 있으면 효과가 없어 야생형에서만 쓴다.
+BRCA 변이 암에 PARP 억제제를 쓰는 것은 합성치사(synthetic lethality)를 이용한 치료이다. | O | 두 DNA 복구 경로가 모두 막힌 암세포만 선택적으로 죽는다.
+nivolumab과 pembrolizumab은 CTLA-4를 차단하는 면역관문억제제이다. | X | 두 약물은 PD-1 억제제이며 CTLA-4 억제제는 ipilimumab이다.
+bevacizumab의 흔한 부작용은 고혈압과 단백뇨이다. | O | VEGF를 차단하는 항체로 위장관 천공과 혈전색전증도 일으킬 수 있다.
+azathioprine은 체내에서 6-mercaptopurine으로 전환되어 퓨린 합성을 억제한다. | O | 림프구의 증식을 막는 항대사 면역억제제이다.
+cetirizine, loratadine 같은 2세대 항히스타민제는 1세대보다 진정 작용이 강하다. | X | 혈액뇌장벽 통과가 적어 1세대보다 졸림이 적다.
+omeprazole은 벽세포의 H2 수용체를 경쟁적으로 차단하여 위산 분비를 줄인다. | X | H+/K+-ATPase를 비가역적으로 억제하며 H2 차단은 famotidine의 기전이다.
+metoclopramide는 추체외로 증상을 일으킬 수 있다. | O | 혈액뇌장벽을 통과해 중추 D2 수용체를 차단하기 때문이며 domperidone은 드물다.
+acarbose 복용 중 저혈당이 생기면 설탕(자당)으로 교정한다. | X | α-glucosidase가 억제되어 자당이 분해되지 않으므로 포도당으로 교정한다.
+dapagliflozin은 근위세뇨관에서 포도당 재흡수를 억제하여 소변으로 당을 배출시킨다. | O | SGLT2 억제제로 인슐린과 무관하게 작용하며 체중과 혈압도 낮춘다.
+임신 1기의 갑상샘기능항진증에는 PTU보다 methimazole을 우선 선택한다. | X | methimazole은 기형 유발 위험이 있어 임신 1기에는 PTU를 쓴다.
+methimazole 복용 중 발열과 인후통이 생기면 무과립구증을 의심해 백혈구 수를 확인한다. | O | thionamide의 중대한 부작용이며 PTU에서도 생길 수 있다.
+finasteride는 5α-reductase를 억제하며 양성 전립샘비대증과 남성형 탈모에 쓴다. | O | testosterone이 DHT로 전환되는 것을 막아 전립샘 크기를 줄인다.
+leuprolide를 지속적으로 투여하면 LH와 FSH 분비가 계속 증가한다. | X | 초기에 일시적으로 증가한 뒤 수용체 탈감작으로 분비가 억제된다.
+raloxifene은 뼈에서 estrogen 길항제로 작용한다. | X | 뼈에서는 작용제로 골다공증을 예방하고 유방과 자궁에서는 길항제로 작용한다.
+경구 alendronate는 복용 후 바로 누워서 쉬도록 교육한다. | X | 식도 자극을 막기 위해 공복에 물과 복용하고 30분 이상 눕지 않는다.
+teriparatide는 하루 1회 간헐적으로 투여하면 골형성을 촉진하므로 중증 골다공증에 쓴다. | O | PTH 유사체로 간헐 투여 시 조골세포를 자극하며 지속 노출은 골흡수를 늘린다.
+활동성 폐결핵 초치료의 초기 2개월에는 isoniazid, rifampin, pyrazinamide, ethambutol 4제를 병용한다. | O | 이후 isoniazid와 rifampin 중심의 유지요법 4개월로 총 6개월 치료한다.
+미분획 heparin의 효과는 aPTT로 감시한다. | O | LMWH는 약동학이 예측 가능해 통상적인 감시가 필요 없다.
+enoxaparin 같은 저분자량 heparin(LMWH)은 주로 thrombin(IIa)을 선택적으로 억제한다. | X | 주로 Xa 인자를 억제하며 피하로 투여한다.
+clozapine, olanzapine 같은 비전형 항정신병약은 전형 약물보다 추체외로 증상이 적다. | O | D2와 함께 5-HT2A 수용체를 길항하기 때문이다.
+MAO 억제제 복용 중 숙성 치즈를 먹으면 심한 저혈압이 생긴다. | X | tyramine이 분해되지 않아 norepinephrine이 대량 유리되어 고혈압 위기가 온다.
+zolpidem은 GABA-A 수용체의 α1 소단위(BZ1)에 선택적으로 작용해 주로 수면 유도 효과를 낸다. | O | 항불안, 근이완, 항경련 효과는 약하며 몽유병과 기억상실이 생길 수 있다.
+opioid 금단에서는 동공이 축소되고 변비가 생긴다. | X | 급성 효과와 반대로 동공 산대, 설사, 발한, 오한, 근육통이 나타난다.
+buprenorphine은 μ 수용체 부분 작용제로 천장효과가 있어 호흡 억제 위험이 비교적 낮다. | O | opioid 의존의 유지 치료에 쓴다.
+알코올 의존 치료제 disulfiram은 alcohol dehydrogenase를 억제한다. | X | aldehyde dehydrogenase를 억제해 acetaldehyde가 쌓여 불쾌 반응이 생긴다.
+감염으로 산성화된 염증 조직에서는 국소마취제의 효과가 떨어진다. | O | 약염기인 마취제의 이온형이 늘어 신경막을 통과하기 어려워진다.
+혈액/가스 분배계수가 큰 흡입마취제일수록 마취 유도가 빠르다. | X | 혈액에 많이 녹아 분압이 천천히 오르므로 유도와 회복이 모두 느리다.
+ketamine은 NMDA 수용체 길항제로 propofol보다 호흡 억제와 혈압 저하가 적다. | O | 교감신경을 자극하며 뇌혈류와 뇌압을 높일 수 있다.
+pramipexole을 복용하는 파킨슨병 환자에서 병적 도박 같은 충동조절장애가 생길 수 있다. | O | D2/D3 도파민 작용제의 특징적 부작용이며 환각과 졸음도 생긴다.
+파킨슨병에서 benztropine 같은 항콜린제는 떨림보다 운동완서에 더 효과적이다. | X | 주로 떨림에 효과적이며 고령에서는 인지 저하 위험 때문에 주의한다.
+MRSA 감염의 1차 치료제는 vancomycin이다. | O | MRSA는 mecA에 의한 PBP 변화로 β-lactam계 항생제가 듣지 않는다.
+Mycoplasma 폐렴에는 β-lactam계 항생제가 효과적이다. | X | 세포벽이 없어 무효하므로 macrolide나 tetracycline계를 쓴다.
+침습성 아스페르길루스증에 우선 쓰는 azole계 항진균제는 voriconazole이다. | O | azole은 14α-demethylase를 억제해 ergosterol 합성을 막는다.
+acyclovir는 바이러스의 thymidine kinase에 의해 인산화되어야 활성을 나타낸다. | O | 감염 세포에서만 활성화되어 바이러스 DNA 사슬 연장을 중단시킨다.
+oseltamivir는 인플루엔자 바이러스의 M2 이온통로를 차단하여 탈외피를 억제한다. | X | neuraminidase를 억제해 바이러스 방출을 막으며 M2 차단은 amantadine이다.
+삼일열 말라리아의 재발을 막기 위해 primaquine을 쓸 때는 투여 전에 G6PD 결핍 여부를 확인한다. | O | 간의 hypnozoite를 제거하지만 G6PD 결핍에서는 용혈성 빈혈을 일으킨다.
+acetazolamide의 대표 부작용은 대사성 알칼리증이다. | X | HCO3- 배설이 늘어 대사성 산증이 생기며 녹내장과 고산병에 쓴다.
+신장성 요붕증 환자의 소변량을 줄이는 데 thiazide 이뇨제를 쓸 수 있다. | O | 체액량이 줄면 근위세뇨관 재흡수가 늘어 원위부로 가는 여과액이 감소한다.

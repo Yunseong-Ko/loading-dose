@@ -24,3 +24,53 @@ Weak opioid에서 strong opioid로 바꿀 때 기존 weak opioid는 함께 유�
 암성 돌발통이 생기면 정기 진통제 용량은 유지하고 bolus 진통제를 추가한다. | O | 돌발통 횟수가 많아지면 정기 진통제 용량을 올린다.
 Bleomycin은 골수억제가 적은 대신 폐섬유화가 주된 독성이다. | O | Cisplatin, vincristine도 골수억제가 적고 대신 신경독성이 문제다.
 Doxorubicin의 심독성은 치료를 마치면 대부분 회복되는 일시적 독성이다. | X | 누적(cumulative) 독성으로, 치료가 끝나도 회복이 어렵다.
+국가암검진에서 위암은 만 40세 이상에서 2년마다 위내시경을 시행한다. | O | 위내시경이 어려우면 위장조영검사를 선택할 수 있다.
+국가암검진에서 유방암은 만 40세 이상 여성에게 2년마다 유방초음파를 시행한다. | X | 검진 방법은 유방초음파가 아니라 유방촬영술이다.
+국가암검진에서 자궁경부암 검진은 만 30세 이상 여성부터 시작한다. | X | 만 20세 이상 여성에게 2년마다 자궁경부세포검사를 시행한다.
+증상이 없는 사람에게 조기검진으로 암을 찾아내는 것은 1차 예방에 해당한다. | X | 조기검진은 2차 예방이고, 금연·예방접종 같은 발병 전 예방이 1차 예방이다.
+APC 유전자 변이에 의한 가족샘종폴립증은 대장암 예방을 위해 예방적 대장 전절제술을 시행한다. | O | 수백~수천 개의 선종이 생기고 치료하지 않으면 거의 모두 대장암으로 진행한다.
+Lynch 증후군(HNPCC)의 원인은 APC 유전자 변이이다. | X | MLH1, MSH2, MSH6, PMS2 같은 mismatch repair 유전자 변이가 원인이다.
+대장 선종 발생을 줄여 대장암 예방 효과가 인정되는 약제는 statin이다. | X | Aspirin이다. Statin은 암 예방 효과의 근거가 없다.
+HPV는 자궁경부암뿐 아니라 두경부암의 발생과도 연관된다. | O | HPV 백신으로 자궁경부암을 예방할 수 있다.
+Choriocarcinoma의 진단에 쓸 수 있는 종양표지자는 CA 125이다. | X | β-hCG다. CA 125는 난소암의 추적 관찰에 쓴다.
+CA 19-9은 췌장암의 치료 반응과 재발을 추적하는 데 쓰는 종양표지자이다. | O | 대부분의 종양표지자는 진단이 아니라 monitoring 용도다.
+전이성 germ cell tumor는 항암화학요법만으로 완치를 기대할 수 있는 종양이다. | O | 급성 백혈병, GTN도 항암제 감수성이 높아 항암치료로 완치가 가능하다.
+Methotrexate와 5-FU는 M기의 미세소관을 억제하는 spindle poison이다. | X | S기 DNA 합성을 억제하는 antimetabolite다.
+Vincristine과 paclitaxel은 미세소관 기능을 억제해 M기 세포분열을 막는다. | O | Vinca alkaloid와 taxane 모두 말초신경병증을 일으킨다.
+Cisplatin은 S기에만 선택적으로 작용하는 세포주기 특이 항암제이다. | X | Platinum과 alkylating agent는 DNA에 직접 결합하는 세포주기 비특이 약제다.
+세포독성 항암제 투여 후 호중구는 보통 1~2주째에 최저치에 도달한다. | O | 회복 기간을 두기 위해 항암제는 2~4주 간격으로 투여한다.
+구토 유발 위험이 가장 높은 항암제에 속하는 것은 bleomycin이다. | X | Cisplatin이 대표적인 고위험 약제이고 bleomycin은 구토를 적게 일으킨다.
+말초신경병증을 흔히 일으키는 항암제는 5-FU와 methotrexate이다. | X | Cisplatin, taxane, vinca alkaloid가 대표적이고 5-FU와 MTX는 점막염이 심하다.
+탈모가 심한 대표적 항암제는 doxorubicin과 cyclophosphamide이다. | O | Cyclophosphamide는 생식샘 독성으로 조기 폐경도 일으킬 수 있다.
+표적항암제 중 이름이 -mab으로 끝나는 단클론항체는 경구로 투여한다. | X | 단클론항체는 주사로만 투여하고, -nib으로 끝나는 small molecule이 경구 약이다.
+Imatinib은 BCR-ABL을 억제하며 CML과 GIST에 사용한다. | O | GIST에서는 c-KIT 변이가 표적이다.
+Bevacizumab은 EGFR에 결합해 종양세포 증식 신호를 차단한다. | X | VEGF를 표적으로 혈관생성을 억제한다. EGFR 항체는 cetuximab이다.
+Nivolumab과 pembrolizumab은 PD-1에 대한 항체이다. | O | PD-1과 PD-L1의 결합을 막아 T 세포의 종양 공격을 회복시킨다.
+Ipilimumab은 PD-L1을 차단하는 면역관문억제제이다. | X | CTLA-4 항체다. PD-L1 항체는 atezolizumab, durvalumab, avelumab이다.
+면역항암제의 부작용은 자가면역질환과 비슷한 양상의 면역 관련 이상반응이다. | O | 약을 끊은 뒤에도 치료 효과가 지속될 수 있는 것이 특징이다.
+암성 통증에서 tramadol과 codeine은 strong opioid로 분류한다. | X | 둘 다 weak opioid이고, strong opioid는 morphine, oxycodone, fentanyl 등이다.
+경도의 암성 통증은 acetaminophen이나 NSAIDs 같은 비마약성 진통제로 시작한다. | O | 통증이 지속되거나 심해지면 weak opioid, strong opioid로 단계를 올린다.
+폐암의 humoral hypercalcemia는 종양이 분비한 PTHrP 때문이며 squamous cell carcinoma에서 흔하다. | O | PTHrP가 PTH 수용체에 작용해 골흡수와 신장 Ca 재흡수를 늘린다.
+뼈 전이가 직접 뼈를 녹여 생기는 고칼슘혈증을 humoral hypercalcemia of malignancy라 한다. | X | 이는 local osteolytic hypercalcemia이고, HHM은 PTHrP 등 체액성 인자가 원인이다.
+고칼슘혈증의 심전도에서는 QT 간격이 연장된다. | X | QT 간격이 짧아진다. QT 연장은 저칼슘혈증의 소견이다.
+악성 종양에 의한 고칼슘혈증에서 가장 먼저 할 치료는 생리식염수 정맥 수액이다. | O | 다뇨로 탈수가 동반되며, 이후 골흡수를 억제하는 bisphosphonate를 쓴다.
+Bisphosphonate는 신장에서 칼슘 배설을 늘려 고칼슘혈증을 교정한다. | X | 파골세포의 골흡수를 억제한다. 칼슘 배설을 늘리는 것은 furosemide다.
+Ectopic ACTH 증후군에서는 저칼륨혈증과 대사성 알칼리증이 두드러진다. | O | 고농도 cortisol이 mineralocorticoid 수용체를 자극하기 때문이다.
+Ectopic ACTH 증후군에서는 CRH를 투여하면 ACTH가 뚜렷하게 상승한다. | X | 종양에는 CRH 수용체가 없어 반응하지 않으며, 반응하는 것은 Cushing disease다.
+Ectopic ACTH 증후군의 가장 대표적인 원인 종양은 SCLC이다. | O | Carcinoid tumor, islet cell tumor도 원인이 된다.
+SCLC 환자의 Lambert-Eaton 근무력증후군은 자가항체에 의한 신생물딸림 신경질환이다. | O | 치료는 원인 종양 치료와 함께 steroid, IVIG, 혈장교환술을 쓴다.
+신생물딸림 신경질환이 중추신경계를 침범하면 뇌척수액에서 호중구 위주의 세포 증가가 보인다. | X | 림프구 위주의 세포 증가, 단백 상승, oligoclonal band가 보인다.
+큰 중간엽 종양 환자의 공복 저혈당은 종양의 IGF-II 과분비로 설명된다. | O | IGF-II가 insulin 수용체에 작용하며, HCC에서도 생길 수 있다.
+Tumor-induced osteomalacia는 종양이 분비한 FGF-23으로 혈중 인이 증가해 발생한다. | X | FGF-23은 인을 감소시키며, 종양 치료와 함께 인과 vitamin D를 보충한다.
+고환 germ cell tumor 남성의 여성형유방은 종양의 hCG 과분비와 관련된다. | O | hCG가 estrogen 생성을 늘리며, 소아에서는 성조숙증을 일으킨다.
+SVC 증후군의 가장 흔한 원인은 폐암이다. | O | 젊은 환자에서는 림프종이 흔한 원인이다.
+SVC 증후군에서는 얼굴과 팔의 부종, 목정맥 확장, 앞가슴벽의 곁순환 정맥이 관찰된다. | O | SVC 폐색으로 머리와 상지의 정맥 환류가 막히기 때문이다.
+SVC 증후군 환자의 대증 치료로 머리를 낮추고 다리를 올린 자세를 취하게 한다. | X | 머리를 높이고 산소, 이뇨제, 저염식, steroid로 부종을 줄인다.
+치료 후 재발한 SVC 증후군에는 SVC 내 self-expanding stent 삽입을 고려한다. | O | 카테터가 원인이면 카테터 제거와 항응고 치료를 한다.
+전이성 척수압박의 신경 증상은 대개 배뇨·배변장애가 먼저 나타나고 근력저하가 마지막에 온다. | X | 근력저하, 감각저하, 배뇨·배변장애 순으로 진행한다.
+척추 단순촬영에서 한쪽 pedicle이 보이지 않는 winking owl sign은 척추 전이를 시사한다. | O | 전이암이 pedicle을 파괴해 생기는 소견이다.
+종양용해증후군은 고형암보다 백혈병과 림프종에서 흔하다. | O | 항암제 반응성이 커서 한꺼번에 많은 세포가 죽기 때문이다.
+종양용해증후군의 급성 신손상은 주로 calcium oxalate 결정 침착으로 발생한다. | X | Uric acid 결정과 calcium phosphate 결정이 세관에 침착해 생긴다.
+Allopurinol은 이미 만들어진 요산을 allantoin으로 분해하는 약이다. | X | Xanthine oxidase를 억제해 요산 생성을 줄이며, 요산 분해는 rasburicase의 작용이다.
+종양용해증후군에서 K이 6.0 mEq/L를 넘거나 증상이 있는 저칼슘혈증이 있으면 혈액투석을 고려한다. | O | Cr, 요산, 인이 각각 10 mg/dL를 넘는 경우도 투석 적응증이다.
+항암치료 직후 소변량 감소와 함께 요산, K, 인, LDH가 상승하면 종양용해증후군을 의심한다. | O | 횡문근융해증과 검사 소견이 비슷해 병력으로 감별한다.
