@@ -40,6 +40,12 @@ func loadTuning() {
     if let v = j["stopExclude"] as? [String] { stopExclude = v.map { $0.lowercased() } }
     if let v = j["pendingTimeout"] as? Double, v > 0 { pendingTimeout = v }
     if let v = j["endGrace"] as? Double, v > 0 { endGrace = v }
+    if let v = j["blockSites"] as? [String] { blockSites = v.map { $0.lowercased() } }
+    if let v = j["waterMinutes"] as? Double, v > 0 { waterMinutes = v }
+    if let v = j["nestMinutes"] as? Double, v > 0 { nestMinutes = v }
+    if let v = j["eyeMinutes"] as? Double, v > 0 { eyeMinutes = v }
+    if let v = j["stretchMinutes"] as? Double, v > 0 { stretchMinutes = v }
+    if let v = j["calendarLeadMinutes"] as? Double, v > 0 { calendarLeadMinutes = v }
     Log.write("config.json 적용: targets=\(targetBundleIDs.sorted()) stopWords=\(stopWords) stopExclude=\(stopExclude) pendingTimeout=\(pendingTimeout) endGrace=\(endGrace)")
 }
 
@@ -736,6 +742,10 @@ final class QuizUI: NSObject {
 
     var isLoading: () -> Bool = { false }   // 아직 답변을 기다리는 중인지
     var visible: Bool { return panel.isVisible }
+    // 펫이 카드 흐름을 따라가도록 알려 준다.
+    var onShow: (() -> Void)?
+    var onAnswer: ((Bool) -> Void)?
+    var onHide: (() -> Void)?
     var canAnswer: Bool { return visible && isOpen && !answered && current != nil }
 
     init(deck: Deck) {
@@ -956,6 +966,7 @@ final class QuizUI: NSObject {
         titleLabel.textColor = .secondaryLabelColor
         setProgress(seconds: 0)
         spinner.setRunning()
+        defer { onShow?() }
         if visible && isOpen {   // 지난 답변의 카드가 아직 열려 있으면 그대로 이어 간다
             apply(animated: true)
             return
@@ -1007,6 +1018,7 @@ final class QuizUI: NSObject {
     func hide() {
         for t in [openTimer, autoNext, collapseTimer, hideTimer] { t?.invalidate() }
         guard visible else { return }
+        onHide?()
         let gen = generation
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = reduceMotion() ? 0 : 0.18
@@ -1037,6 +1049,7 @@ final class QuizUI: NSObject {
         answered = true
         let correct = isCloze ? choseO : (choseO == c.a)
         deck.record(c, correct: correct)
+        onAnswer?(correct)
 
         if isCloze {
             paint(choseO ? oButton : xButton, choseO ? "알았음" : "몰랐음", choseO ? .systemGreen : .systemRed)
@@ -1729,6 +1742,13 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     let deck = Deck()
     lazy var ui = QuizUI(deck: deck)
     let scanner = Scanner()
+    let pet = Pet()
+    private let petItem = NSMenuItem(title: "펫 보이기", action: #selector(togglePet), keyEquivalent: "")
+    private let focusItem = NSMenuItem(title: "집중 모드 — 유튜브를 열면 펫이 닫음", action: #selector(toggleFocus), keyEquivalent: "")
+    private lazy var focus = FocusGuard(pet: pet)
+    private let habitsItem = NSMenuItem(title: "습관 알림 — 물·눈 쉬기·스트레칭", action: #selector(toggleHabits), keyEquivalent: "")
+    private let calendarItem = NSMenuItem(title: "일정 알림 — 시작 10분 전에 펫이 알려 줌", action: #selector(toggleCalendar), keyEquivalent: "")
+    private lazy var calendarWatch = CalendarWatch(pet: pet)
 
     private var phase = Phase.idle
     private var pendingAt = Date()
@@ -1759,6 +1779,21 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         buildMainMenu()
 
         let args = CommandLine.arguments
+        // 동작 확인용: 펫의 자세들을 PNG 로 저장하고 끝낸다.
+        if let i = args.firstIndex(of: "--pet-snapshot"), i + 1 < args.count {
+            pet.snapshotPoses(to: URL(fileURLWithPath: args[i + 1]))
+            NSApp.terminate(nil)
+            return
+        }
+        // 펫은 카드 왼쪽 위에 앉는다 (카드를 바라보는 방향).
+        pet.perchTarget = { [weak self] in
+            guard let s = self, s.ui.visible else { return nil }
+            let f = s.ui.panel.frame
+            return CGPoint(x: f.minX - 34, y: f.maxY - 60)
+        }
+        ui.onShow = { [weak self] in self?.pet.goToCard() }
+        ui.onAnswer = { [weak self] correct in self?.pet.react(correct: correct) }
+        ui.onHide = { [weak self] in self?.pet.goHome() }
         let demo = args.contains("--demo")
         // 실제 사용 때만 권한 요청 창을 띄운다.
         let shotSettings = args.firstIndex(of: "--snapshot-settings")
@@ -1836,6 +1871,13 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // 평소 실행: 앱을 열면 설정 창이 보인다 (메뉴 막대 전용 앱이라 아무것도 안 뜨면 켜진 줄 모른다).
         let testing = demo || ["--snapshot", "--import-anki", "--scope", "--gen-test"].contains { args.contains($0) }
         if !testing { settings.show() }
+        if !testing || demo { pet.start() }
+        if !testing {
+            loadTuning()
+            pet.setOverFullScreen(FocusGuard.enabled)
+            focus.start()
+            calendarWatch.start()
+        }
         if let i = args.firstIndex(of: "--snapshot"), i + 1 < args.count {
             let dir = URL(fileURLWithPath: args[i + 1], isDirectory: true)
             let shot = { (name: String) in self.ui.snapshot(to: dir.appendingPathComponent(name)) }
@@ -1877,6 +1919,30 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         scopeMenu.autoenablesItems = false
         scopeItem.submenu = scopeMenu
         menu.insertItem(scopeItem, at: 4)
+        petItem.target = self
+        petItem.state = Pet.enabled ? .on : .off
+        menu.addItem(petItem)
+        let previewItem = NSMenuItem(title: "펫 동작 보기", action: nil, keyEquivalent: "")
+        let previewMenu = NSMenu()
+        for (title, key) in [("물 마시기", "drink"), ("둥지 짓고 자기", "nest"), ("꾸벅꾸벅 졸기", "nod"),
+                             ("졸다가 구르기", "roll"), ("날아서 옮겨 가기", "fly"), ("앞 보고 기우뚱", "tilt"),
+                             ("눈 쉬기", "eyes"), ("기지개 켜기", "stretch"), ("일정 알림 (예시)", "calendar")] {
+            let it = NSMenuItem(title: title, action: #selector(previewPet(_:)), keyEquivalent: "")
+            it.target = self
+            it.representedObject = key
+            previewMenu.addItem(it)
+        }
+        previewItem.submenu = previewMenu
+        menu.addItem(previewItem)
+        focusItem.target = self
+        focusItem.state = FocusGuard.enabled ? .on : .off
+        menu.addItem(focusItem)
+        habitsItem.target = self
+        habitsItem.state = Pet.habitsOn ? .on : .off
+        menu.addItem(habitsItem)
+        calendarItem.target = self
+        calendarItem.state = CalendarWatch.enabled ? .on : .off
+        menu.addItem(calendarItem)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Loading Dose 종료", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
@@ -1887,6 +1953,50 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusLine.title = tap != nil
             ? "작동 중 — Claude·ChatGPT 앱에서 Enter를 누르면 카드가 뜹니다"
             : "권한 필요 — 손쉬운 사용에서 'Loading Dose'를 허용하세요"
+    }
+
+    @objc func previewPet(_ sender: NSMenuItem) {
+        if let key = sender.representedObject as? String { pet.preview(key) }
+    }
+
+    @objc func toggleHabits() {
+        Pet.habitsOn = !Pet.habitsOn
+        habitsItem.state = Pet.habitsOn ? .on : .off
+    }
+
+    // 일정 알림을 켤 때 캘린더 접근을 요청한다. 거절되면 켜지 않고 이유를 알려 준다.
+    @objc func toggleCalendar() {
+        if CalendarWatch.enabled {
+            CalendarWatch.enabled = false
+            calendarItem.state = .off
+            return
+        }
+        calendarWatch.requestAccess { [weak self] ok in
+            guard let s = self else { return }
+            CalendarWatch.enabled = ok
+            s.calendarItem.state = ok ? .on : .off
+            Log.write("일정 알림 \(ok ? "켬" : "켜지 못함 (캘린더 접근 거절)")")
+            if ok { s.calendarWatch.check() }
+            else {
+                let alert = NSAlert()
+                alert.messageText = "캘린더를 읽을 수 없습니다"
+                alert.informativeText = "시스템 설정 → 개인정보 보호 및 보안 → 캘린더에서 Loading Dose를 허용한 뒤 다시 켜 주세요."
+                NSApp.activate(ignoringOtherApps: true)
+                alert.runModal()
+            }
+        }
+    }
+
+    @objc func toggleFocus() {
+        FocusGuard.enabled = !FocusGuard.enabled
+        focusItem.state = FocusGuard.enabled ? .on : .off
+        pet.setOverFullScreen(FocusGuard.enabled)
+        Log.write("집중 모드 \(FocusGuard.enabled ? "켬" : "끔")")
+    }
+
+    @objc func togglePet() {
+        pet.setEnabled(!Pet.enabled)
+        petItem.state = Pet.enabled ? .on : .off
     }
 
     @objc func startDemo() {
