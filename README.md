@@ -84,7 +84,7 @@ assets/                                          README용 아이콘과 시연 �
 </p>
 
 <p align="center">
-  <a href="https://github.com/Yunseong-Ko/loading-dose/releases/tag/omogi-v0.1.1"><b>Omogi 내려받기 (Mac)</b></a>
+  <a href="https://github.com/Yunseong-Ko/loading-dose/releases/tag/omogi-v0.1.2"><b>Omogi 내려받기 (Mac)</b></a>
   &nbsp;·&nbsp;
   <a href="assets/omogi-demo.mp4">영상으로 보기 (MP4)</a>
 </p>
