@@ -87,7 +87,26 @@ O/X 문제 풀기  (기본은 꺼져 있습니다. 설정 창에서 켭니다)
  - 끄기: 설정 창의 "Omogi 종료"
 
 
-완전히 지우고 새로 깔기
+터미널 한 줄로 하기  (업데이트·재설치)
+
+"터미널" 앱을 열고 아래 한 줄을 통째로 붙여넣은 뒤 Enter 를 누릅니다.
+쓰던 Omogi 를 끄고(응용 프로그램·다운로드 폴더 어디에 있든 지우고), 새 버전을 받아 응용 프로그램 폴더에 넣고 엽니다.
+이 방법으로 받으면 "열 수 없습니다" 경고도 뜨지 않습니다.
+
+[A] 업데이트 — 아이디, 친구, 편지, 설정은 그대로 둡니다.
+
+pkill -x Omogi; rm -rf /Applications/Omogi.app ~/Downloads/Omogi.app; curl -L -o /tmp/Omogi-Mac.zip https://github.com/Yunseong-Ko/loading-dose/releases/download/omogi-v0.2.0/Omogi-Mac.zip && ditto -x -k /tmp/Omogi-Mac.zip /Applications && xattr -dr com.apple.quarantine /Applications/Omogi.app; open /Applications/Omogi.app
+
+[B] 완전히 지우고 새로 — 아이디, 친구, 받은 편지, 설정이 모두 사라집니다.
+    편지를 쓰고 있었다면 먼저 설정 창 → "친구…" → "서버에서 내 정보 지우기…"를 누르고 하세요.
+
+pkill -x Omogi; rm -rf /Applications/Omogi.app ~/Downloads/Omogi.app ~/Library/Application\ Support/Omogi; defaults delete com.omogi.mac 2>/dev/null; curl -L -o /tmp/Omogi-Mac.zip https://github.com/Yunseong-Ko/loading-dose/releases/download/omogi-v0.2.0/Omogi-Mac.zip && ditto -x -k /tmp/Omogi-Mac.zip /Applications && xattr -dr com.apple.quarantine /Applications/Omogi.app; open /Applications/Omogi.app
+
+ - 0.1.0, 0.1.1 에서 [A]로 올라오면 키체인 창이 한 번 뜹니다. Mac 암호를 넣고 "항상 허용"을 누르세요.
+ - 집중 모드나 "AI 답변을 기다리는 동안"을 쓰고 있었다면 손쉬운 사용 권한을 지웠다가 다시 줘야 합니다 (위 5번).
+
+
+완전히 지우고 새로 깔기  (손으로 하는 방법)
 
 보통은 지울 필요 없이 위의 업데이트 방법대로 덮어쓰면 됩니다. 뭔가 꼬였거나 처음부터 다시 시작하고 싶을 때만 하세요.
 이렇게 하면 아이디, 친구, 받은 편지가 모두 사라집니다.
