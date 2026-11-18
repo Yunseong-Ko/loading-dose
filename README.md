@@ -65,6 +65,7 @@ mac/build.sh
 manifest.json, content.js, cards.js, options.*   크롬 확장
 pack.js                                          기본 제공 퀴즈 (packs/kmle.txt 에서 생성)
 mac/main.swift, mac/build.sh                     Mac 앱 (AppKit, 외부 의존성 없음)
+mac/quiz.swift                                   문항·카드 화면·로딩 감지 (Loading Dose 와 Omogi 공용)
 omogi/                                           Omogi — 따로 나온 펫 앱 (아래 설명)
 packs/kmle.txt                                   기본 제공 퀴즈 원본
 packs/parts/                                     과목별 문항 파일
@@ -84,9 +85,11 @@ assets/                                          README용 아이콘과 시연 �
 </p>
 
 <p align="center">
-  <a href="https://github.com/Yunseong-Ko/loading-dose/releases/tag/omogi-v0.1.2"><b>Omogi 내려받기 (Mac)</b></a>
+  <a href="https://github.com/Yunseong-Ko/loading-dose/releases/tag/omogi-v0.2.0"><b>Omogi 내려받기 (Mac)</b></a>
   &nbsp;·&nbsp;
-  <a href="assets/omogi-demo.mp4">영상으로 보기 (MP4)</a>
+  <a href="assets/omogi-teaser.mp4">티저 영상 (음악 포함, MP4)</a>
+  &nbsp;·&nbsp;
+  <a href="assets/omogi-demo.mp4">소개 영상 (MP4)</a>
 </p>
 
 `omogi/` 는 Loading Dose 와 별개인 Mac 메뉴 막대 앱입니다. 화면 아래에 흰오목눈이 "오모기"가 살면서 돌아다니고, 졸고, 둥지를 짓습니다.
@@ -96,6 +99,7 @@ assets/                                          README용 아이콘과 시연 �
 - 일정 알림: Mac 캘린더 일정이 시작하기 10분 전에 알려 줍니다 (캘린더 접근 필요, 기본 꺼짐).
 - 편지 (만드는 중): 쪽지를 쓰면 오모기가 물고 날아가 30분~3시간 뒤에 전하고, 가끔은 잃어버립니다. 아이디나 친구 코드로 친구를 맺어 주고받으며, 내용은 받는 사람만 열 수 있게 잠가서 보냅니다. 서버는 Supabase (`omogi/server/schema.sql`, 주소와 공개용 키는 `omogi/server.json`), 없으면 나에게 보내는 연습 배달만 됩니다.
 - 설정: Omogi 앱을 다시 열면 설정 창이 뜨고, 화면의 오모기를 오른쪽 클릭해도 메뉴가 나옵니다 (메뉴 막대 아이콘이 가려진 Mac 용).
+- O/X 퀴즈: Loading Dose 와 같은 문항으로, 오모기가 가끔 문제를 물어 오거나 Claude·ChatGPT 앱의 답변을 기다리는 동안 카드가 뜹니다 (기본 꺼짐, `omogi/quizwatch.swift`).
 - 빌드: `omogi/build.sh` → `omogi/build/Omogi.app`. 조정은 `~/Library/Application Support/Omogi/config.json`.
 
 <p align="center">
