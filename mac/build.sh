@@ -14,8 +14,8 @@ mkdir -p "$APP/Contents/Resources/pet"
 cp ../omogi/pet/sprites.png "$APP/Contents/Resources/pet/sprites.png"
 # Apple Silicon 과 인텔 Mac 양쪽에서 돌도록 두 번 빌드해 하나로 합친다.
 TMP="$(mktemp -d)"
-swiftc -O -target arm64-apple-macos12.0 -o "$TMP/arm64" main.swift ../omogi/pet.swift
-swiftc -O -target x86_64-apple-macos12.0 -o "$TMP/x86_64" main.swift ../omogi/pet.swift
+swiftc -O -target arm64-apple-macos12.0 -o "$TMP/arm64" main.swift quiz.swift ../omogi/pet.swift
+swiftc -O -target x86_64-apple-macos12.0 -o "$TMP/x86_64" main.swift quiz.swift ../omogi/pet.swift
 lipo -create "$TMP/arm64" "$TMP/x86_64" -output "$APP/Contents/MacOS/Enter"
 rm -rf "$TMP"
 # 서명: 키체인에 "Loading Dose Dev" 코드 서명 인증서가 있으면 그걸로 서명한다.

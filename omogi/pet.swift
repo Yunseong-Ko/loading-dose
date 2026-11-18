@@ -198,6 +198,11 @@ final class Pet: NSObject {
     private var downAt = 0.0, downPos = CGPoint.zero
     /// 편지를 물고 기다리는 펫을 눌렀을 때
     var onMailOpen: (() -> Void)?
+    /// 문제를 물고 기다리는 펫을 눌렀을 때
+    var onQuizOpen: (() -> Void)?
+    private var holdingQuiz = false               // 물고 있는 것이 편지가 아니라 퀴즈인지
+    /// 연속 정답에 몸이 커지다가 터지는 동작을 할지 (카드가 있는 앱에서 켠다)
+    var comboGrowth = false
     var isHoldingMail: Bool { return mode == .mail || heldFromMail || (errand == .receive && (mode == .depart || mode == .away || mode == .arrive)) }
 
     // 던지기: 집은 채로 빠르게 움직이다 놓으면 그 속도로 날아가 바닥을 구른다.
@@ -337,6 +342,16 @@ final class Pet: NSObject {
     /// 편지가 왔을 때: 화면 밖으로 나갔다가 편지를 물고 돌아와, 누를 때까지 기다린다. 지금 나설 수 없으면 false.
     func bringMail(_ text: String) -> Bool {
         guard canRunErrand else { return false }
+        holdingQuiz = false
+        mailText = text
+        startErrand(.receive)
+        return true
+    }
+
+    /// 문제를 물어 온다: 편지처럼 나갔다가 물고 돌아와 기다린다. 누르면 onQuizOpen. 한참 안 누르면 그만둔다.
+    func bringQuiz(_ text: String) -> Bool {
+        guard canRunErrand else { return false }
+        holdingQuiz = true
         mailText = text
         startErrand(.receive)
         return true
@@ -426,6 +441,7 @@ final class Pet: NSObject {
         case "eyes": setMode(.eyes); say("눈을 20초만 쉬어요", seconds: 20)
         case "stretch": setMode(.stretch); say("기지개 한번 켜요", seconds: 7)
         case "calendar": _ = announce("10분 뒤 · 병리 실습 (예시)")
+        case "quizIn": _ = bringQuiz("O/X 한 문제 풀래요? — 눌러서 풀기")
         case "mailOut": _ = carryOut()
         case "mailIn": _ = bringMail("편지가 왔어요 (예시) — 눌러서 열기")
         case "lost": _ = reportLost("편지를 잃어버렸어요… (예시)")
@@ -473,7 +489,7 @@ final class Pet: NSObject {
             heldFromMail = false
             bubble.orderOut(nil)
             setMode(.fall)
-            onMailOpen?()
+            if holdingQuiz { holdingQuiz = false; onQuizOpen?() } else { onMailOpen?() }
             return
         }
         setMode(.fall)
@@ -548,6 +564,7 @@ final class Pet: NSObject {
               let target = perchTarget?() else { return }
         if mode != .flyHome { homeX = pos.x }
         lookUntil = 0
+        if comboGrowth { growthTarget = growthFor(streak) }      // 지난 카드까지의 연속 정답만큼 커진 채로 간다
         fly(to: target, as: .flyOut)
     }
 
@@ -556,7 +573,7 @@ final class Pet: NSObject {
         reactHappy = correct
         reactStart = CACurrentMediaTime()
         reactUntil = reactStart + (correct ? 0.8 : 1.1)
-        if cardOnly, !reduceMotion() {
+        if comboGrowth, !reduceMotion() {
             if correct {
                 streak += 1
                 growthTarget = growthFor(streak)
@@ -575,6 +592,7 @@ final class Pet: NSObject {
     func goHome() {
         guard shown, mode == .perch || mode == .flyOut else { return }
         let screen = currentScreen()
+        if !cardOnly { growthTarget = 1 }                        // 카드를 떠나 돌아다닐 때는 원래 크기로
         fly(to: CGPoint(x: homeX, y: cardOnly ? offstageY : floorY(on: screen)), as: .flyHome)
     }
 
@@ -815,6 +833,12 @@ final class Pet: NSObject {
             faceRight = true
             frame = Int(t / 0.45) % 7 == 0 ? .mail1 : .mail0
             if !bubble.isVisible { say(mailText, seconds: 3600) }
+            if holdingQuiz, t > 90 {                 // 문제는 한참 안 누르면 내려놓는다
+                holdingQuiz = false
+                bubble.orderOut(nil)
+                setMode(.sit)
+                frame = .sit0
+            }
         case .lost:
             frame = .sad
             if t >= 7 { setMode(.sit); frame = .sit0 }

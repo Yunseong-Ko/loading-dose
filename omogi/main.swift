@@ -69,6 +69,13 @@ func loadTuning() {
     if let v = j["eyeMinutes"] as? Double, v > 0 { eyeMinutes = v }
     if let v = j["stretchMinutes"] as? Double, v > 0 { stretchMinutes = v }
     if let v = j["calendarLeadMinutes"] as? Double, v > 0 { calendarLeadMinutes = v }
+    // 퀴즈: 감지 대상 앱과 "중지" 버튼 판단 기준 (Loading Dose 와 같은 키), 물어 오는 간격
+    if let v = j["targets"] as? [String], !v.isEmpty { targetBundleIDs = Set(v) }
+    if let v = j["stopWords"] as? [String], !v.isEmpty { stopWords = v.map { $0.lowercased() } }
+    if let v = j["stopExclude"] as? [String] { stopExclude = v.map { $0.lowercased() } }
+    if let v = j["pendingTimeout"] as? Double, v > 0 { pendingTimeout = v }
+    if let v = j["endGrace"] as? Double, v > 0 { endGrace = v }
+    if let v = j["quizBringMinutes"] as? Double, v > 0 { quizBringMinutes = v }
     if let v = j["letterMinMinutes"] as? Double, v > 0 { letterMinMinutes = v }
     if let v = j["letterMaxMinutes"] as? Double, v > 0 { letterMaxMinutes = v }
     if let v = j["letterLossPercent"] as? Double, v >= 0 { letterLossPercent = v }
@@ -80,6 +87,10 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     let pet = Pet()
     private lazy var focus = FocusGuard(pet: pet)
     private lazy var calendarWatch = CalendarWatch(pet: pet)
+    private lazy var quiz = QuizWatcher(pet: pet)
+    private lazy var subjects = SubjectsWindow(deck: quiz.deck)
+    private let quizEnterItem = NSMenuItem(title: "O/X — AI 답변을 기다리는 동안 문제 띄우기", action: #selector(toggleQuizEnter), keyEquivalent: "")
+    private let quizBringItem = NSMenuItem(title: "O/X — 가끔 오모기가 문제 물어 오기", action: #selector(toggleQuizBring), keyEquivalent: "")
     private lazy var letters = LetterBox(pet: pet)
     private lazy var letterWindows = LetterWindows(box: letters)
     private let inboxItem = NSMenuItem(title: "편지함…", action: #selector(openInbox), keyEquivalent: "")
@@ -142,6 +153,12 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
         }
         letters.start()
+        quiz.start()
+        // 동작 확인용: 실행한 뒤 문제 하나를 바로 펼치고, 정답을 고른다.
+        if args.contains("--quiz-test") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { self.quiz.solveOne() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4) { self.quiz.ui.answer(true) }
+        }
         // 동작 확인용: 실행한 뒤 연습 편지 한 통을 보낸다.
         if let i = args.firstIndex(of: "--send-test"), i + 1 < args.count {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
@@ -150,7 +167,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 }
             }
         }
-        Log.write("──── 실행 v0.1.2 trusted=\(AXIsProcessTrusted()) focus=\(FocusGuard.enabled) calendar=\(CalendarWatch.enabled) server=\(Server.shared != nil)")
+        Log.write("──── 실행 v0.2.0 trusted=\(AXIsProcessTrusted()) focus=\(FocusGuard.enabled) calendar=\(CalendarWatch.enabled) server=\(Server.shared != nil)")
         pet.setOverFullScreen(FocusGuard.enabled)
         pet.start()
         focus.start()
@@ -171,7 +188,9 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         return [("오모기 보이기", "화면 아래에서 돌아다닙니다. 집어서 옮길 수 있어요.", Pet.enabled, #selector(togglePet)),
                 ("습관 알림", "물 마시기, 눈 쉬기, 스트레칭을 때맞춰 알려 줍니다.", Pet.habitsOn, #selector(toggleHabits)),
                 ("집중 모드", "유튜브·인스타그램을 열면 날아가 탭을 닫습니다. 손쉬운 사용 권한이 필요해요.", FocusGuard.enabled, #selector(toggleFocus)),
-                ("일정 알림", "Mac 캘린더 일정을 시작 10분 전에 알려 줍니다. 캘린더 접근이 필요해요.", CalendarWatch.enabled, #selector(toggleCalendar))]
+                ("일정 알림", "Mac 캘린더 일정을 시작 10분 전에 알려 줍니다. 캘린더 접근이 필요해요.", CalendarWatch.enabled, #selector(toggleCalendar)),
+                ("O/X — AI 답변을 기다리는 동안", "Claude·ChatGPT 앱에서 Enter 누르고 기다릴 때 뜹니다. 손쉬운 사용 권한 필요.", QuizWatcher.enterOn, #selector(toggleQuizEnter)),
+                ("O/X — 가끔 물어 오기", "컴퓨터를 쓰는 동안 오모기가 가끔 문제를 물고 옵니다. 누르면 펼쳐져요.", QuizWatcher.bringOn, #selector(toggleQuizBring))]
     }
     var unreadLetters: Int { return letters.unreadCount }
 
@@ -191,6 +210,17 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
             menu.addItem(item)
         }
         menu.addItem(.separator())
+        for (item, on) in [(quizEnterItem, QuizWatcher.enterOn), (quizBringItem, QuizWatcher.bringOn)] {
+            item.target = self
+            item.state = on ? .on : .off
+            menu.addItem(item)
+        }
+        for (title, sel) in [("지금 한 문제 풀기", #selector(solveNow)), ("O/X 과목 고르기…", #selector(openSubjects))] {
+            let it = NSMenuItem(title: title, action: sel, keyEquivalent: "")
+            it.target = self
+            menu.addItem(it)
+        }
+        menu.addItem(.separator())
         let writeItem = NSMenuItem(title: "편지 쓰기…", action: #selector(openCompose), keyEquivalent: "")
         writeItem.target = self
         menu.addItem(writeItem)
@@ -208,7 +238,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         for (title, key) in [("물 마시기", "drink"), ("둥지 짓고 자기", "nest"), ("꾸벅꾸벅 졸기", "nod"),
                              ("졸다가 구르기", "roll"), ("날아서 옮겨 가기", "fly"), ("앞 보고 기우뚱", "tilt"),
                              ("눈 쉬기", "eyes"), ("기지개 켜기", "stretch"), ("일정 알림 (예시)", "calendar"),
-                             ("편지 물고 나가기", "mailOut"), ("편지 받아 오기 (예시)", "mailIn"), ("편지 잃어버림 (예시)", "lost")] {
+                             ("문제 물어 오기 (예시)", "quizIn"), ("편지 물고 나가기", "mailOut"), ("편지 받아 오기 (예시)", "mailIn"), ("편지 잃어버림 (예시)", "lost")] {
             let it = NSMenuItem(title: title, action: #selector(previewPet(_:)), keyEquivalent: "")
             it.target = self
             it.representedObject = key
@@ -232,8 +262,8 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         let unread = letters.unreadCount
         inboxItem.title = unread > 0 ? "편지함… (새 편지 \(unread)통)" : "편지함…"
-        if FocusGuard.enabled && !AXIsProcessTrusted() {
-            statusLine.title = "집중 모드: 권한 필요 — 손쉬운 사용에서 'Omogi'를 허용하세요"
+        if (FocusGuard.enabled || QuizWatcher.enterOn) && !AXIsProcessTrusted() {
+            statusLine.title = "권한 필요 — 손쉬운 사용에서 'Omogi'를 허용하세요"
         } else if !Pet.enabled {
             statusLine.title = "오모기가 숨어 있어요"
         } else {
@@ -260,6 +290,27 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         main.addItem(editItem)
         NSApp.mainMenu = main
     }
+
+    // Enter 감지는 키 입력과 AI 앱의 "중지" 버튼을 읽어야 해서, 켤 때 손쉬운 사용 권한이 없으면 요청 창을 띄운다.
+    @objc func toggleQuizEnter() {
+        defer { settingsWindow.refresh() }
+        QuizWatcher.enterOn = !QuizWatcher.enterOn
+        quizEnterItem.state = QuizWatcher.enterOn ? .on : .off
+        Log.write("퀴즈 Enter 감지 \(QuizWatcher.enterOn ? "켬" : "끔")")
+        if QuizWatcher.enterOn && !AXIsProcessTrusted() {
+            let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+            _ = AXIsProcessTrustedWithOptions(opts)
+        }
+    }
+
+    @objc func toggleQuizBring() {
+        defer { settingsWindow.refresh() }
+        QuizWatcher.bringOn = !QuizWatcher.bringOn
+        quizBringItem.state = QuizWatcher.bringOn ? .on : .off
+    }
+
+    @objc func solveNow() { quiz.solveOne() }
+    @objc func openSubjects() { subjects.show() }
 
     @objc func openCompose() { letterWindows.showCompose() }
     @objc func openInbox() { letterWindows.showInbox() }
@@ -331,6 +382,71 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 }
 
+// ───────────────────────── O/X 과목 고르기 ─────────────────────────
+final class SubjectsWindow: NSObject {
+    private let deck: Deck
+    private var window: NSWindow?
+    private var topics: [String] = []
+    private let countLabel = NSTextField(labelWithString: "")
+    init(deck: Deck) { self.deck = deck }
+
+    func show() {
+        if window == nil {
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 380, height: 520), styleMask: [.titled, .closable],
+                             backing: .buffered, defer: false)
+            w.title = "O/X 과목 고르기"
+            w.isReleasedWhenClosed = false
+            w.center()
+            window = w
+        }
+        render()
+        NSApp.activate(ignoringOtherApps: true)
+        window?.makeKeyAndOrderFront(nil)
+    }
+
+    private func render() {
+        guard let root = window?.contentView else { return }
+        root.subviews.forEach { $0.removeFromSuperview() }
+        let packs = deck.packTopics
+        topics = packs.map { $0.name }
+        let rowH: CGFloat = 24
+        let doc = NSView(frame: NSRect(x: 0, y: 0, width: 360, height: CGFloat(packs.count) * rowH + 12))
+        for (i, t) in packs.enumerated() {
+            let box = NSButton(checkboxWithTitle: "\(t.name)  (\(t.count))", target: self, action: #selector(toggle(_:)))
+            box.frame = NSRect(x: 20, y: doc.frame.height - 6 - CGFloat(i + 1) * rowH, width: 320, height: 20)
+            box.tag = i
+            box.state = deck.packOff.contains(t.name) ? .off : .on
+            doc.addSubview(box)
+        }
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 56, width: 380, height: 420))
+        scroll.hasVerticalScroller = true
+        scroll.drawsBackground = false
+        scroll.documentView = doc
+        root.addSubview(scroll)
+        doc.scroll(NSPoint(x: 0, y: doc.frame.height))
+        countLabel.frame = NSRect(x: 20, y: 486, width: 340, height: 18)
+        countLabel.font = .systemFont(ofSize: 12)
+        countLabel.textColor = .secondaryLabelColor
+        countLabel.stringValue = "국시 대비 기본 문항 — 켜 둔 문항 \(deck.packCount)개"
+        root.addSubview(countLabel)
+        for (i, (title, sel)) in [("모두 켜기", #selector(allOn)), ("모두 끄기", #selector(allOff))].enumerated() {
+            let b = NSButton(title: title, target: self, action: sel)
+            b.frame = NSRect(x: 16 + CGFloat(i) * 104, y: 14, width: 100, height: 28)
+            b.bezelStyle = .rounded
+            b.controlSize = .small
+            root.addSubview(b)
+        }
+    }
+
+    @objc private func toggle(_ sender: NSButton) {
+        guard sender.tag < topics.count else { return }
+        deck.togglePack(topics[sender.tag])
+        countLabel.stringValue = "국시 대비 기본 문항 — 켜 둔 문항 \(deck.packCount)개"
+    }
+    @objc private func allOn() { deck.setAllPacks(on: true); render() }
+    @objc private func allOff() { deck.setAllPacks(on: false); render() }
+}
+
 // ───────────────────────── 설정 창 ─────────────────────────
 // 메뉴 막대 아이콘과 같은 일을 하는 창. 앱을 처음 켰을 때와, 켜져 있는 앱을 다시 열었을 때 뜬다.
 final class SettingsWindow: NSObject {
@@ -340,7 +456,7 @@ final class SettingsWindow: NSObject {
 
     func show() {
         if window == nil {
-            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 420, height: 470), styleMask: [.titled, .closable],
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 420, height: 610), styleMask: [.titled, .closable],
                              backing: .buffered, defer: false)
             w.title = "Omogi"
             w.isReleasedWhenClosed = false
@@ -364,15 +480,15 @@ final class SettingsWindow: NSObject {
         guard let root = window?.contentView else { return }
         root.subviews.forEach { $0.removeFromSuperview() }
         if let face = app.pet.faceImage(height: 46) {
-            let v = NSImageView(frame: NSRect(x: 24, y: 404, width: 40, height: 46))
+            let v = NSImageView(frame: NSRect(x: 24, y: 544, width: 40, height: 46))
             v.image = face
             v.imageScaling = .scaleNone
             root.addSubview(v)
         }
-        root.addSubview(label("Omogi", NSRect(x: 76, y: 424, width: 300, height: 24), size: 18, weight: .semibold))
-        root.addSubview(label("화면에 사는 작은 뱁새", NSRect(x: 76, y: 404, width: 300, height: 18), size: 12, color: .secondaryLabelColor))
+        root.addSubview(label("Omogi", NSRect(x: 76, y: 564, width: 300, height: 24), size: 18, weight: .semibold))
+        root.addSubview(label("화면에 사는 작은 뱁새", NSRect(x: 76, y: 544, width: 300, height: 18), size: 12, color: .secondaryLabelColor))
 
-        var y: CGFloat = 372
+        var y: CGFloat = 512
         for t in app.toggles {
             let box = NSButton(checkboxWithTitle: t.title, target: app, action: t.action)
             box.frame = NSRect(x: 24, y: y, width: 360, height: 20)
@@ -396,9 +512,16 @@ final class SettingsWindow: NSObject {
             b.bezelStyle = .rounded
             root.addSubview(b)
         }
+        for (i, (title, sel)) in [("지금 한 문제 풀기", #selector(AppController.solveNow)),
+                                  ("O/X 과목 고르기…", #selector(AppController.openSubjects))].enumerated() {
+            let b = NSButton(title: title, target: app, action: sel)
+            b.frame = NSRect(x: 20 + CGFloat(i) * 192, y: y - 58, width: 188, height: 32)
+            b.bezelStyle = .rounded
+            root.addSubview(b)
+        }
         root.addSubview(label("이 창은 Omogi 앱을 다시 열면 언제든 뜹니다. 화면의 오모기를 오른쪽 클릭하거나, 화면 맨 위 메뉴 막대의 새 얼굴 아이콘을 눌러도 같은 메뉴가 나와요. (아이콘이 많으면 새 얼굴이 가려져 안 보일 수 있어요.)",
                               NSRect(x: 24, y: 52, width: 372, height: 62), size: 11, color: .secondaryLabelColor))
-        root.addSubview(label("제작자: @hi20010205  ·  v0.1.2", NSRect(x: 24, y: 20, width: 250, height: 16), size: 11, color: .tertiaryLabelColor))
+        root.addSubview(label("제작자: @hi20010205  ·  v0.2.0", NSRect(x: 24, y: 20, width: 250, height: 16), size: 11, color: .tertiaryLabelColor))
         let quit = NSButton(title: "Omogi 종료", target: NSApp, action: #selector(NSApplication.terminate(_:)))
         quit.frame = NSRect(x: 290, y: 14, width: 110, height: 28)
         quit.bezelStyle = .rounded
