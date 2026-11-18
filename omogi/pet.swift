@@ -1,11 +1,12 @@
 // 화면 아래 가장자리에 사는 작은 펫 (흰오목눈이, 픽셀 스프라이트).
-// 평소에는 앉아 있거나 콩콩 뛰어 조금 옮겨 가거나 존다. 질문을 보내 카드가 뜨면 카드 옆으로 날아가 앉고,
-// 정답·오답에 반응한 뒤 카드가 사라지면 제자리로 돌아간다.
+// Omogi 앱에서는 평소에 앉아 있거나 콩콩 뛰어 조금 옮겨 가거나 졸고, 습관·일정 알림과 집중 모드 출동을 맡는다.
+// Loading Dose 앱에서는 cardOnly 로 쓴다: 카드가 뜨면 화면 아래에서 날아와 카드 옆에 앉아
+// 정답·오답에 반응하고, 카드가 사라지면 날아가 사라진다. (두 앱이 이 파일을 같이 쓴다.)
 // 방해하지 않는 것이 원칙이다: 작고, 가장자리에서만 움직이고, 마우스 클릭은 그대로 통과한다.
 // 그림은 tools/make_pet_sprites.py 가 만든 pet/sprites.png (36x28 픽셀 프레임을 가로로 이어 붙인 것).
 import Cocoa
 
-// 생활 습관 동작의 기준. config.json 의 "waterMinutes", "nestMinutes" 로 바꿀 수 있다.
+// 생활 습관 동작의 기준. Omogi 의 config.json 에서 "waterMinutes", "nestMinutes" 등으로 바꿀 수 있다.
 var waterMinutes = 45.0     // 컴퓨터를 쓰는 동안 이 간격으로 펫이 물을 마신다 (같이 마시라는 신호)
 var eyeMinutes = 20.0       // 이 간격으로 펫이 눈을 감고 20초 쉰다
 var stretchMinutes = 50.0   // 이 간격으로 펫이 기지개를 켠다
@@ -45,8 +46,13 @@ final class Pet: NSObject {
         case nod1, nod2, roll1, roll2, roll3
         case build1, build2, nest0, nest1, drink0, drink1, drink2
         case stretch, cal0, cal1
+        case mailFly0, mailFly1, mailFly2, mail0, mail1
     }
-    private enum Mode { case sit, hop, sleep, flyOut, perch, flyHome, roam, roll, chase, peck, held, fall, nest, drink, eyes, stretch, calendar }
+    private enum Mode {
+        case sit, hop, sleep, flyOut, perch, flyHome, roam, roll, chase, peck, held, fall, nest, drink, eyes, stretch, calendar
+        case depart, away, arrive, mail, lost      // 편지 심부름: 화면 밖으로 나감 → 밖에 있음 → 돌아옴 → 편지를 물고 기다림 / 잃어버림
+    }
+    private enum Errand { case send, receive }
 
     private let framePx = CGSize(width: 36, height: 28)
     private let zoom: CGFloat = 3                 // 스프라이트 1픽셀 = 화면 3포인트 (몸 지름 약 48pt)
@@ -98,8 +104,22 @@ final class Pet: NSObject {
     private let bubbleLabel = NSTextField(labelWithString: "")
     private var bubbleUntil = 0.0
 
+    // 편지 심부름
+    private var errand = Errand.send
+    private var carrying = false                  // 지금 부리에 편지가 있는지
+    private var errandScreen: NSScreen?
+    private var mailText = ""                     // 편지를 물고 기다리는 동안의 말풍선
+    private var heldFromMail = false              // 편지를 물고 있다가 집힌 경우
+    private var downAt = 0.0, downPos = CGPoint.zero
+    /// 편지를 물고 기다리는 펫을 눌렀을 때
+    var onMailOpen: (() -> Void)?
+    var isHoldingMail: Bool { return mode == .mail || heldFromMail || (errand == .receive && (mode == .depart || mode == .away || mode == .arrive)) }
+
     /// 카드 옆에 앉을 자리(발바닥 좌표). 카드가 없으면 nil.
     var perchTarget: (() -> CGPoint?)?
+    /// 카드가 떠 있을 때만 나타난다 (Loading Dose). 돌아다니기·습관 알림·집어 옮기기는 하지 않는다.
+    var cardOnly = false
+    private var offstageY: CGFloat = 0            // cardOnly: 화면 밖에서 드나드는 높이 (카드에 가까운 쪽 가장자리 바깥)
 
     override init() {
         panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 108, height: 84),
@@ -169,7 +189,7 @@ final class Pet: NSObject {
 
     private func updateBubble(_ now: Double) {
         guard bubble.isVisible else { return }
-        let talking = mode == .drink || mode == .eyes || mode == .stretch || mode == .calendar
+        let talking = mode == .drink || mode == .eyes || mode == .stretch || mode == .calendar || mode == .mail || mode == .lost
         if now > bubbleUntil || !talking { bubble.orderOut(nil) } else { placeBubble() }
     }
 
@@ -180,6 +200,50 @@ final class Pet: NSObject {
         lookUntil = 0
         setMode(.calendar)
         say(text, seconds: 10)
+        return true
+    }
+
+    // ── 편지 심부름 ──
+    private var canRunErrand: Bool {
+        return shown && (mode == .sit || mode == .hop || mode == .sleep || mode == .nest || mode == .drink
+                         || mode == .eyes || mode == .stretch)
+    }
+
+    private func startErrand(_ e: Errand) {
+        let screen = currentScreen()
+        let vf = screen.visibleFrame
+        errand = e
+        errandScreen = screen
+        carrying = e == .send
+        homeX = pos.x
+        lookUntil = 0
+        bubble.orderOut(nil)
+        // 화면 위쪽 바깥으로 비스듬히 날아 나간다.
+        let x = pos.x < vf.midX ? min(vf.maxX - 60, pos.x + 280) : max(vf.minX + 60, pos.x - 280)
+        fly(to: CGPoint(x: x, y: screen.frame.maxY + 10), as: .depart)
+    }
+
+    /// 편지를 보낼 때: 편지를 물고 화면 밖으로 날아갔다가 빈 부리로 돌아온다. 지금 나설 수 없으면 false.
+    func carryOut() -> Bool {
+        guard canRunErrand else { return false }
+        startErrand(.send)
+        return true
+    }
+
+    /// 편지가 왔을 때: 화면 밖으로 나갔다가 편지를 물고 돌아와, 누를 때까지 기다린다. 지금 나설 수 없으면 false.
+    func bringMail(_ text: String) -> Bool {
+        guard canRunErrand else { return false }
+        mailText = text
+        startErrand(.receive)
+        return true
+    }
+
+    /// 보낸 편지가 누락됐을 때: 시무룩하게 한 줄로 알린다. 지금 나설 수 없으면 false.
+    func reportLost(_ text: String) -> Bool {
+        guard canRunErrand else { return false }
+        lookUntil = 0
+        setMode(.lost)
+        say(text, seconds: 7)
         return true
     }
 
@@ -223,7 +287,7 @@ final class Pet: NSObject {
 
     // ── 켜고 끄기 ──
     func start() {
-        guard Pet.enabled, !shown, !frames.isEmpty else { return }
+        guard !cardOnly, Pet.enabled, !shown, !frames.isEmpty else { return }
         guard let screen = NSScreen.main else { return }
         pos = CGPoint(x: screen.visibleFrame.maxX - 170, y: floorY(on: screen))
         homeX = pos.x
@@ -258,6 +322,9 @@ final class Pet: NSObject {
         case "eyes": setMode(.eyes); say("눈을 20초만 쉬어요", seconds: 20)
         case "stretch": setMode(.stretch); say("기지개 한번 켜요", seconds: 7)
         case "calendar": _ = announce("10분 뒤 · 병리 실습 (예시)")
+        case "mailOut": _ = carryOut()
+        case "mailIn": _ = bringMail("편지가 왔어요 (예시) — 눌러서 열기")
+        case "lost": _ = reportLost("편지를 잃어버렸어요… (예시)")
         case "nest": nestHold = now + 12; setMode(.nest)
         case "nod": setMode(.sleep); rollAt = .infinity; nextAction = now + 11
         case "roll": setMode(.sleep); rollAt = 0
@@ -276,9 +343,12 @@ final class Pet: NSObject {
 
     // ── 집어서 옮기기 ──
     private func pickUp() {
-        guard shown else { return }
+        guard shown, mode != .away else { return }
         if mode == .chase || mode == .peck { endChase() }
+        heldFromMail = mode == .mail
         let m = NSEvent.mouseLocation
+        downAt = CACurrentMediaTime()
+        downPos = m
         grab = CGPoint(x: m.x - pos.x, y: m.y - pos.y)
         lookUntil = 0
         reactUntil = 0
@@ -288,6 +358,15 @@ final class Pet: NSObject {
     private func drop() {
         guard shown, mode == .held else { return }
         fallSpeed = 0
+        // 편지를 물고 있을 때 옮기지 않고 살짝 누르기만 했으면 편지를 연다.
+        let m = NSEvent.mouseLocation
+        if heldFromMail, CACurrentMediaTime() - downAt < 0.4, hypot(m.x - downPos.x, m.y - downPos.y) < 6 {
+            heldFromMail = false
+            bubble.orderOut(nil)
+            setMode(.fall)
+            onMailOpen?()
+            return
+        }
         setMode(.fall)
     }
 
@@ -318,7 +397,8 @@ final class Pet: NSObject {
     // ── 집중 모드: 정해 준 자리로 날아가 콕콕 쪼고(이때 act 실행) 돌아온다 ──
     func chase(to target: CGPoint, act: @escaping () -> Void, done: @escaping () -> Void) {
         // 카드 옆에 앉아 있다가도 간다 (답을 기다리며 딴짓하는 때가 바로 막을 때다). 이미 출동 중이거나 구르는 중일 때만 미룬다.
-        guard shown, mode != .chase, mode != .peck, mode != .roll, mode != .held, mode != .fall else { done(); return }
+        guard shown, mode != .chase, mode != .peck, mode != .roll, mode != .held, mode != .fall,
+              mode != .depart, mode != .away, mode != .arrive else { done(); return }
         if mode == .sit || mode == .hop || mode == .sleep { homeX = pos.x }
         lookUntil = 0
         chaseAct = act
@@ -335,6 +415,20 @@ final class Pet: NSObject {
 
     // ── 카드와 이어지는 동작 ──
     func goToCard() {
+        if cardOnly, !shown {
+            // 카드에 가까운 쪽(위 또는 아래) 화면 바깥에서 날아 들어온다.
+            guard Pet.enabled, !frames.isEmpty, let target = perchTarget?() else { return }
+            let screen = NSScreen.screens.first { $0.frame.contains(target) } ?? NSScreen.main ?? NSScreen.screens[0]
+            offstageY = target.y > screen.frame.midY ? screen.frame.maxY + 8 : screen.frame.minY - 96
+            pos = CGPoint(x: max(screen.frame.minX + 40, target.x - 140), y: offstageY)
+            homeX = pos.x
+            shown = true
+            lastTick = CACurrentMediaTime()
+            movePanel(lift: 0)
+            panel.orderFrontRegardless()
+            fly(to: target, as: .flyOut)
+            return
+        }
         // 탭을 닫으러 간 중이면 그 일을 마친 뒤 카드로 온다 (peck 이 끝날 때 카드가 떠 있으면 카드로 날아간다).
         guard shown, mode != .flyOut, mode != .perch, mode != .chase, mode != .peck, mode != .held, mode != .fall,
               let target = perchTarget?() else { return }
@@ -353,7 +447,8 @@ final class Pet: NSObject {
 
     func goHome() {
         guard shown, mode == .perch || mode == .flyOut else { return }
-        fly(to: CGPoint(x: homeX, y: floorY(on: currentScreen())), as: .flyHome)
+        let screen = currentScreen()
+        fly(to: CGPoint(x: homeX, y: cardOnly ? offstageY : floorY(on: screen)), as: .flyHome)
     }
 
     private func fly(to target: CGPoint, as m: Mode) {
@@ -392,7 +487,8 @@ final class Pet: NSObject {
     // 움직일 때만 자주, 가만히 있을 때는 드물게 그린다.
     private func retime() {
         let moving = mode == .hop || mode == .flyOut || mode == .flyHome || mode == .roam || mode == .roll
-            || mode == .chase || mode == .peck || mode == .held || mode == .fall || CACurrentMediaTime() < reactUntil
+            || mode == .chase || mode == .peck || mode == .held || mode == .fall || mode == .depart || mode == .arrive
+            || CACurrentMediaTime() < reactUntil
         let want: TimeInterval = moving ? 1.0 / 30 : 1.0 / 12
         guard want != interval || timer == nil else { return }
         interval = want
@@ -554,17 +650,45 @@ final class Pet: NSObject {
                 pos = CGPoint(x: from.x + (faceRight ? 1 : -1) * hopStep * (CGFloat(n) + air), y: from.y)
                 if frame == .hop1 { lift = sin(air * .pi) * 9 }
             }
-        case .flyOut, .flyHome, .roam, .chase:
+        case .away:
+            // 화면 밖에서 잠깐 머문 뒤(편지를 건네거나 받아 오는 시간) 제자리로 돌아온다.
+            frame = .fly1
+            if t >= 2.2 {
+                carrying = errand == .receive
+                let screen = errandScreen ?? NSScreen.main ?? NSScreen.screens[0]
+                fly(to: CGPoint(x: homeX, y: floorY(on: screen)), as: .arrive)
+            }
+        case .mail:
+            // 편지를 물고 기다린다. 가끔 들썩여서 눈에 띄게 한다.
+            faceRight = true
+            frame = Int(t / 0.45) % 7 == 0 ? .mail1 : .mail0
+            if !bubble.isVisible { say(mailText, seconds: 3600) }
+        case .lost:
+            frame = .sad
+            if t >= 7 { setMode(.sit); frame = .sit0 }
+        case .flyOut, .flyHome, .roam, .chase, .depart, .arrive:
             if mode == .flyOut, let target = perchTarget?() { to = target }   // 카드 크기가 바뀌면 따라간다
             let raw = CGFloat(min(1, t / duration))
             let k = raw * raw * (3 - 2 * raw)
             pos = CGPoint(x: from.x + (to.x - from.x) * k, y: from.y + (to.y - from.y) * k + sin(k * .pi) * arc)
-            frame = [Frame.fly0, .fly1, .fly2, .fly1][Int(t * 14) % 4]
+            frame = (carrying ? [Frame.mailFly0, .mailFly1, .mailFly2, .mailFly1] : [Frame.fly0, .fly1, .fly2, .fly1])[Int(t * 14) % 4]
             if raw >= 1 {
                 pos = to
-                setMode(mode == .flyOut ? .perch : mode == .chase ? .peck : .sit)
-                if mode == .sit { faceRight = false }
-                frame = .sit0
+                if cardOnly, mode == .flyHome { stop(); return }      // 화면 밖으로 나갔으면 사라진다
+                switch mode {
+                case .flyOut: setMode(.perch)
+                case .chase: setMode(.peck)
+                case .depart: setMode(.away)
+                case .arrive where errand == .receive:
+                    carrying = false
+                    setMode(.mail)
+                    say(mailText, seconds: 3600)
+                default:
+                    carrying = false
+                    setMode(.sit)
+                    faceRight = false
+                }
+                frame = mode == .mail ? .mail0 : mode == .away ? .fly1 : .sit0
             }
         case .held:
             // 집힌 동안: 마우스를 따라가며 대롱대롱
@@ -583,7 +707,11 @@ final class Pet: NSObject {
                 sitsInARow = 0
                 setMode(.sit)
                 frame = .hop2
-                if perchTarget?() != nil { goToCard() }
+                if heldFromMail {                        // 편지를 문 채로 옮겨졌으면 계속 물고 기다린다
+                    heldFromMail = false
+                    setMode(.mail)
+                    say(mailText, seconds: 3600)
+                } else if perchTarget?() != nil { goToCard() }
                 else { lookUntil = now + 1.6; tiltAt = now + 0.5 }
             }
         case .peck:
@@ -634,6 +762,13 @@ final class Pet: NSObject {
         let feetX = (faceRight ? feetPx : framePx.width - feetPx) * zoom
         let origin = CGPoint(x: (pos.x - feetX).rounded(), y: (pos.y - floorInset + lift).rounded())
         if panel.frame.origin != origin { panel.setFrameOrigin(origin) }
+    }
+
+    /// 메뉴 막대에 쓸 작은 얼굴 그림 (정면 프레임에서 몸만 잘라 낸 것).
+    func faceImage(height: CGFloat) -> NSImage? {
+        guard Frame.front.rawValue < frames.count,
+              let cut = frames[Frame.front.rawValue].cropping(to: CGRect(x: 8, y: 5, width: 20, height: 23)) else { return nil }
+        return NSImage(cgImage: cut, size: NSSize(width: (height * 20 / 23).rounded(), height: height))
     }
 
     // ── 동작 확인용: 앱이 읽은 프레임을 전부(오른쪽 보기 + 왼쪽 보기) 한 장의 PNG 로 저장한다 ──

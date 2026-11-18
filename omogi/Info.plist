@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>Omogi</string>
+	<key>CFBundleExecutable</key>
+	<string>Omogi</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.omogi.mac</string>
+	<key>CFBundleName</key>
+	<string>Omogi</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>12.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>일정이 가까워지면 오모기가 알려 주려고 캘린더를 읽습니다. 일정 내용은 화면에 보여 주기만 하고 저장하거나 밖으로 보내지 않습니다.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>일정이 가까워지면 오모기가 알려 주려고 캘린더를 읽습니다. 일정 내용은 화면에 보여 주기만 하고 저장하거나 밖으로 보내지 않습니다.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+</dict>
+</plist>

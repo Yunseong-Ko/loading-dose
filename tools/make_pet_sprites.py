@@ -2,8 +2,8 @@
 """펫(흰오목눈이)의 픽셀 스프라이트 시트를 만든다.
 
 한 프레임은 36x28 픽셀이고 바닥은 y=26 이다. 옆모습은 오른쪽을 본다.
-결과: mac/pet/sprites.png (프레임을 가로로 이어 붙인 한 장) — 프레임 순서는 FRAMES 와 같고,
-mac/pet.swift 의 Frame 열거형 순서와 맞아야 한다.
+결과: omogi/pet/sprites.png (프레임을 가로로 이어 붙인 한 장) — 프레임 순서는 FRAMES 와 같고,
+omogi/pet.swift 의 Frame 열거형 순서와 맞아야 한다.
 사용: python3 tools/make_pet_sprites.py [미리보기.png]   (미리보기는 8배 확대한 확인용 그림)
 """
 import pathlib
@@ -12,7 +12,7 @@ import sys
 from PIL import Image, ImageDraw
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-OUT = ROOT / "mac" / "pet" / "sprites.png"
+OUT = ROOT / "omogi" / "pet" / "sprites.png"
 W, H = 36, 28
 
 WHITE = (255, 255, 255, 255)
@@ -270,6 +270,22 @@ def calendar():
     return img
 
 
+def letter(dy=0):
+    """부리에 문 편지 봉투. dy 는 몸을 띄운 만큼(나는 자세는 2)."""
+    img = Image.new("RGBA", (W, H), CLEAR)
+    left, right, top = 26, 34, GROUND - 11 - dy
+    bottom = top + 6
+    for y in range(top, bottom + 1):
+        for x in range(left, right + 1):
+            edge = x in (left, right) or y in (top, bottom)
+            img.putpixel((x, y), LINE if edge else (255, 250, 238, 255))
+    for i in range(1, 4):                            # 봉투 덮개의 V 자
+        img.putpixel((left + i, top + i), DARK2)
+        img.putpixel((right - i, top + i), DARK2)
+    img.putpixel((left + 4, top + 4), (226, 76, 60, 255))    # 빨간 봉인
+    return img
+
+
 def over(*layers):
     """뒤에 올 그림부터 차례로 겹친다."""
     out = Image.new("RGBA", (W, H), CLEAR)
@@ -278,7 +294,7 @@ def over(*layers):
     return out
 
 
-# 순서를 바꾸면 mac/pet.swift 의 Frame 도 같이 바꿀 것.
+# 순서를 바꾸면 omogi/pet.swift 의 Frame 도 같이 바꿀 것.
 FRAMES = [
     ("sit0", frame()),
     ("sit1", frame(squash=1)),
@@ -312,6 +328,11 @@ FRAMES = [
     ("stretch", front(eye="happy", wings="up")),                                         # 기지개
     ("cal0", over(calendar(), frame())),
     ("cal1", over(calendar(), frame(eye="happy", tail="up"))),
+    ("mailFly0", over(frame(dy=2, legs="tuck", wing="up", tail="back"), letter(2))),      # 편지를 물고 난다
+    ("mailFly1", over(frame(dy=2, legs="tuck", wing="mid", tail="back"), letter(2))),
+    ("mailFly2", over(frame(dy=2, legs="tuck", wing="down", tail="back"), letter(2))),
+    ("mail0", over(frame(), letter())),                                                  # 편지를 물고 기다림
+    ("mail1", over(frame(eye="happy", tail="up"), letter())),
 ]
 
 
