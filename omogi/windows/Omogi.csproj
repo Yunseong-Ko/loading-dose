@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- .NET Framework 4.8 은 Windows 10/11 에 기본으로 들어 있어, 실행 파일 하나만 배포하면 된다. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>Omogi</AssemblyName>
+    <RootNamespace>Omogi</RootNamespace>
+    <LangVersion>7.3</LangVersion>
+    <Version>0.1.0</Version>
+    <Product>Omogi</Product>
+    <Description>화면에 사는 작은 뱁새</Description>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <DebugType>none</DebugType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Security" />
+    <Reference Include="UIAutomationClient" />
+    <Reference Include="UIAutomationTypes" />
+    <Reference Include="WindowsBase" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- 펫 그림, 기본 제공 퀴즈, 편지 서버 주소(공개용 키)를 실행 파일 안에 넣는다. Mac 판과 같은 파일이다. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\pet\sprites.png" LogicalName="sprites.png" Link="sprites.png" />
+    <EmbeddedResource Include="..\..\packs\kmle.txt" LogicalName="kmle.txt" Link="kmle.txt" />
+    <EmbeddedResource Include="..\server.json" LogicalName="server.json" Link="server.json" />
+  </ItemGroup>
+
+</Project>

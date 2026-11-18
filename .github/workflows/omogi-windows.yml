@@ -1,0 +1,42 @@
+name: omogi-windows
+
+on:
+  push:
+    branches: [omogi-windows, main]
+    paths:
+      - 'omogi/windows/**'
+      - 'omogi/pet/sprites.png'
+      - 'omogi/server.json'
+      - 'packs/kmle.txt'
+      - '.github/workflows/omogi-windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: dotnet build omogi/windows/Omogi.csproj -c Release -o out
+      - name: Self test (pet, quiz card, letter crypto, key hook, UI Automation)
+        shell: pwsh
+        run: |
+          Get-Item out/Omogi.exe | Format-List Name, Length
+          $p = Start-Process -FilePath out/Omogi.exe -ArgumentList '--selftest', 'selftest' -Wait -PassThru
+          if (Test-Path selftest/result.txt) { Get-Content selftest/result.txt -Encoding utf8 }
+          if ($p.ExitCode -ne 0) { throw "self test failed with exit code $($p.ExitCode)" }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: selftest
+          path: |
+            selftest
+            !selftest/data/secrets
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Omogi-Windows
+          path: out/Omogi.exe
