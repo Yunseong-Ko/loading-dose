@@ -150,7 +150,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 }
             }
         }
-        Log.write("──── 실행 v0.1.1 trusted=\(AXIsProcessTrusted()) focus=\(FocusGuard.enabled) calendar=\(CalendarWatch.enabled) server=\(Server.shared != nil)")
+        Log.write("──── 실행 v0.1.2 trusted=\(AXIsProcessTrusted()) focus=\(FocusGuard.enabled) calendar=\(CalendarWatch.enabled) server=\(Server.shared != nil)")
         pet.setOverFullScreen(FocusGuard.enabled)
         pet.start()
         focus.start()
@@ -398,7 +398,7 @@ final class SettingsWindow: NSObject {
         }
         root.addSubview(label("이 창은 Omogi 앱을 다시 열면 언제든 뜹니다. 화면의 오모기를 오른쪽 클릭하거나, 화면 맨 위 메뉴 막대의 새 얼굴 아이콘을 눌러도 같은 메뉴가 나와요. (아이콘이 많으면 새 얼굴이 가려져 안 보일 수 있어요.)",
                               NSRect(x: 24, y: 52, width: 372, height: 62), size: 11, color: .secondaryLabelColor))
-        root.addSubview(label("제작자: @hi20010205  ·  v0.1.1", NSRect(x: 24, y: 20, width: 250, height: 16), size: 11, color: .tertiaryLabelColor))
+        root.addSubview(label("제작자: @hi20010205  ·  v0.1.2", NSRect(x: 24, y: 20, width: 250, height: 16), size: 11, color: .tertiaryLabelColor))
         let quit = NSButton(title: "Omogi 종료", target: NSApp, action: #selector(NSApplication.terminate(_:)))
         quit.frame = NSRect(x: 290, y: 14, width: 110, height: 28)
         quit.bezelStyle = .rounded

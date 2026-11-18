@@ -2,7 +2,7 @@
 // 서버 주소와 공개용 키는 앱 번들의 server.json 에서 읽는다 (omogi/server.json → build.sh 가 복사). 없으면 서버 기능은 꺼진다.
 //   {"url": "https://xxxx.supabase.co", "key": "sb_publishable_..."}
 // 이 키는 앱에 넣어 배포하라고 만든 공개용 키다. 관리용 비밀 키(sb_secret_...)는 절대 넣지 말 것.
-// 로그인은 가입 절차 없는 익명 로그인이고, 받은 로그인 정보는 키체인에 둔다. 서버 쪽 규칙은 omogi/server/schema.sql.
+// 로그인은 가입 절차 없는 익명 로그인이고, 받은 로그인 정보는 SecretStore(letters.swift)에 둔다. 서버 쪽 규칙은 omogi/server/schema.sql.
 import Cocoa
 
 struct ServerError: Error {
@@ -45,31 +45,18 @@ final class Server {
     private let key: String
     private let queue = DispatchQueue(label: "omogi.server")      // 한 번에 하나씩 (새로 고침 토큰은 한 번만 쓸 수 있다)
     private var session: Session?
-    private let keychain: [String: Any] = [
-        kSecClass as String: kSecClassGenericPassword,
-        kSecAttrService as String: "com.omogi.mac",
-        kSecAttrAccount as String: "server-session",
-    ]
 
     private init(base: URL, key: String) {
         self.base = base
         self.key = key
-        var q = keychain
-        q[kSecReturnData as String] = true
-        q[kSecMatchLimit as String] = kSecMatchLimitOne
-        var out: AnyObject?
-        if SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess, let d = out as? Data {
+        if let d = SecretStore.load("session", keychainAccount: "server-session") {
             session = try? JSONDecoder().decode(Session.self, from: d)
         }
     }
 
     private func store(_ s: Session?) {
         session = s
-        SecItemDelete(keychain as CFDictionary)
-        guard let s = s, let data = try? JSONEncoder().encode(s) else { return }
-        var add = keychain
-        add[kSecValueData as String] = data
-        SecItemAdd(add as CFDictionary, nil)
+        SecretStore.save("session", s.flatMap { try? JSONEncoder().encode($0) })
     }
 
     /// 이 Mac 의 로그인 정보를 지운다 (서버의 계정은 그대로다).

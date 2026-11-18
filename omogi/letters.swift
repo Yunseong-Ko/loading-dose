@@ -18,33 +18,53 @@ var letterLossPercent = 8.0
 let letterMaxChars = 200
 let letterDailyLimit = 5          // 친구 한 명에게 하루에 보낼 수 있는 수
 
+// ───────────────────── 이 Mac 에만 두는 비밀 ─────────────────────
+// 편지 열쇠와 서버 로그인 정보를 두는 곳: ~/Library/Application Support/Omogi/secrets/ (나만 읽을 수 있는 파일).
+// 처음에는 키체인에 뒀지만, 서명이 임시 서명이라 앱을 새 버전으로 바꾸면 키체인이 "다른 앱"으로 보고 막는다.
+// 그러면 열쇠와 로그인이 사라져 친구 관계가 끊기므로 파일로 옮겼다. 예전 버전이 키체인에 둔 것은 처음 한 번 옮겨 온다.
+enum SecretStore {
+    private static let dir = supportDir.appendingPathComponent("secrets", isDirectory: true)
+
+    static func load(_ name: String, keychainAccount: String) -> Data? {
+        let url = dir.appendingPathComponent(name)
+        if let d = try? Data(contentsOf: url), !d.isEmpty { return d }
+        // 예전 버전의 키체인 항목이 있으면 옮겨 온다 (이때 한 번 키체인 확인 창이 뜰 수 있다).
+        let q: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: "com.omogi.mac",
+                                kSecAttrAccount as String: keychainAccount, kSecReturnData as String: true,
+                                kSecMatchLimit as String: kSecMatchLimitOne]
+        var out: AnyObject?
+        guard SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess, let d = out as? Data, !d.isEmpty else { return nil }
+        save(name, d)
+        Log.write("비밀 보관: \(name) 을 키체인에서 옮겨 옴")
+        return d
+    }
+
+    static func save(_ name: String, _ data: Data?) {
+        let fm = FileManager.default
+        let url = dir.appendingPathComponent(name)
+        guard let data = data else { try? fm.removeItem(at: url); return }
+        try? fm.createDirectory(at: dir, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        try? data.write(to: url, options: .atomic)
+        try? fm.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+    }
+}
+
 // ───────────────────── 잠그기 ─────────────────────
 enum LetterCrypto {
     private static let info = Data("omogi-letter-v1".utf8)
-    private static let keychain: [String: Any] = [
-        kSecClass as String: kSecClassGenericPassword,
-        kSecAttrService as String: "com.omogi.mac",
-        kSecAttrAccount as String: "letter-key-p256",
-    ]
     private static var cached: P256.KeyAgreement.PrivateKey?
 
-    /// 이 Mac 의 편지 열쇠. 처음 쓸 때 만들어 키체인에 넣는다.
+    /// 이 Mac 의 편지 열쇠. 처음 쓸 때 만들어 SecretStore 에 둔다.
     static func identity() -> P256.KeyAgreement.PrivateKey {
         if let k = cached { return k }
-        var q = keychain
-        q[kSecReturnData as String] = true
-        q[kSecMatchLimit as String] = kSecMatchLimitOne
-        var out: AnyObject?
-        if SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess, let d = out as? Data,
+        if let d = SecretStore.load("letter-key", keychainAccount: "letter-key-p256"),
            let k = try? P256.KeyAgreement.PrivateKey(rawRepresentation: d) {
             cached = k
             return k
         }
         let k = P256.KeyAgreement.PrivateKey()
-        var add = keychain
-        add[kSecValueData as String] = k.rawRepresentation
-        let status = SecItemAdd(add as CFDictionary, nil)
-        if status != errSecSuccess { Log.write("편지: 열쇠를 키체인에 넣지 못함 (\(status))") }
+        SecretStore.save("letter-key", k.rawRepresentation)
+        Log.write("편지: 새 열쇠를 만듦")
         cached = k
         return k
     }
