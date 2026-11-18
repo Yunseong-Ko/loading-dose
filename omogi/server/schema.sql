@@ -23,6 +23,9 @@ create table if not exists omogi.profiles (
   created_at  timestamptz not null default now()
 );
 
+-- 아이디: 사용자가 직접 정하는 이름표 (영문 소문자·숫자·_ 3~16자). 친구 코드 대신 이것으로도 친구를 찾을 수 있다.
+alter table omogi.profiles add column if not exists handle text unique check (handle ~ '^[a-z0-9_]{3,16}$');
+
 create table if not exists omogi.friendships (
   a           uuid not null references omogi.profiles (id) on delete cascade,     -- 요청한 쪽 (차단이면 차단한 쪽)
   b           uuid not null references omogi.profiles (id) on delete cascade,     -- 요청받은 쪽
@@ -92,10 +95,29 @@ begin
     end loop;
     insert into omogi.profiles (id, code, name, public_key) values (v_me, v_code, btrim(p_name), p_public_key) returning * into v_row;
   end if;
-  return json_build_object('id', v_row.id, 'code', v_row.code, 'name', v_row.name);
+  return json_build_object('id', v_row.id, 'code', v_row.code, 'name', v_row.name, 'handle', v_row.handle);
 end $$;
 
--- 친구 코드로 요청한다. 상대가 이미 나에게 요청해 둔 상태면 바로 친구가 된다.
+-- 아이디를 정하거나 바꾼다. 이미 누가 쓰고 있으면 거절한다.
+create or replace function omogi.set_handle(p_handle text) returns json
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_me uuid := omogi.me();
+  v_h text := lower(ltrim(btrim(p_handle), '@'));
+  v_row omogi.profiles;
+begin
+  if v_h !~ '^[a-z0-9_]{3,16}$' then raise exception 'omogi:bad_handle'; end if;
+  if exists (select 1 from omogi.profiles where handle = v_h and id <> v_me) then raise exception 'omogi:handle_taken'; end if;
+  begin
+    update omogi.profiles set handle = v_h where id = v_me returning * into v_row;
+  exception when unique_violation then
+    raise exception 'omogi:handle_taken';
+  end;
+  if v_row.id is null then raise exception 'omogi:not_registered'; end if;
+  return json_build_object('id', v_row.id, 'code', v_row.code, 'name', v_row.name, 'handle', v_row.handle);
+end $$;
+
+-- 친구 코드나 아이디로 요청한다. 상대가 이미 나에게 요청해 둔 상태면 바로 친구가 된다.
 create or replace function omogi.request_friend(p_code text) returns json
 language plpgsql security definer set search_path = '' as $$
 declare
@@ -104,7 +126,9 @@ declare
   v_f omogi.friendships;
 begin
   if not exists (select 1 from omogi.profiles where id = v_me) then raise exception 'omogi:not_registered'; end if;
-  select * into v_them from omogi.profiles where code = upper(btrim(p_code));
+  select * into v_them from omogi.profiles
+   where code = upper(btrim(p_code)) or handle = lower(ltrim(btrim(p_code), '@'))
+   order by (code = upper(btrim(p_code))) desc limit 1;
   if not found or v_them.id = v_me then raise exception 'omogi:no_such_code'; end if;
   select * into v_f from omogi.friendships
    where (a = v_me and b = v_them.id) or (a = v_them.id and b = v_me);
@@ -154,7 +178,7 @@ end $$;
 create or replace function omogi.list_friends() returns json
 language sql stable security definer set search_path = '' as $$
   select coalesce(json_agg(json_build_object(
-           'id', p.id, 'name', p.name, 'status', f.status,
+           'id', p.id, 'name', p.name, 'handle', p.handle, 'status', f.status,
            'incoming', f.status = 'pending' and f.b = omogi.me(),
            'public_key', case when f.status = 'accepted' then p.public_key end) order by p.name), '[]'::json)
     from omogi.friendships f
@@ -228,6 +252,8 @@ grant execute on all functions in schema omogi to authenticated;
 -- ───────────── 앱이 부르는 함수 (public) ─────────────
 create or replace function public.omogi_register(p_name text, p_public_key text) returns json
 language sql set search_path = '' as $$ select omogi.register(p_name, p_public_key) $$;
+create or replace function public.omogi_set_handle(p_handle text) returns json
+language sql set search_path = '' as $$ select omogi.set_handle(p_handle) $$;
 create or replace function public.omogi_request_friend(p_code text) returns json
 language sql set search_path = '' as $$ select omogi.request_friend(p_code) $$;
 create or replace function public.omogi_respond_friend(p_friend uuid, p_accept boolean) returns void
@@ -249,7 +275,7 @@ do $$
 declare f text;
 begin
   foreach f in array array[
-    'omogi_register(text, text)', 'omogi_request_friend(text)', 'omogi_respond_friend(uuid, boolean)',
+    'omogi_register(text, text)', 'omogi_set_handle(text)', 'omogi_request_friend(text)', 'omogi_respond_friend(uuid, boolean)',
     'omogi_remove_friend(uuid, boolean)', 'omogi_list_friends()', 'omogi_send_letter(uuid, text)',
     'omogi_fetch_mail()', 'omogi_ack_mail(uuid[], uuid[])', 'omogi_delete_account()'] loop
     execute format('revoke execute on function public.%s from public, anon', f);

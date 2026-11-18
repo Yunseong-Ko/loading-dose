@@ -84,6 +84,9 @@ struct Friend {
     var publicKey: Data?         // 서로 친구가 된 뒤에만 있다
     var status: String           // "practice"(나 자신), "accepted", "pending"
     var incoming: Bool           // 상대가 나에게 보낸 요청
+    var handle: String? = nil    // 상대가 정한 아이디 (없을 수 있다)
+    /// 목록에 보여 줄 이름: "이름 (@아이디)"
+    var label: String { return handle.map { "\(name) (@\($0))" } ?? name }
 }
 
 struct Arrival {
@@ -161,6 +164,7 @@ final class LetterBox {
     struct Profile: Codable {
         var code: String
         var name: String
+        var handle: String?      // 내가 정한 아이디
     }
     private struct Saved: Codable {
         var inbox: [Received] = []
@@ -233,7 +237,7 @@ final class LetterBox {
 
     // ── 서버: 시작·친구 ──
     /// 편지 서버에 내 이름과 편지 공개 키를 등록하고 친구 코드를 받는다. 실패하면 이유를 돌려준다.
-    func goOnline(name: String, done: @escaping (String?) -> Void) {
+    func goOnline(name: String, handle: String = "", done: @escaping (String?) -> Void) {
         guard let server = server else { done("이 앱에는 편지 서버가 연결되어 있지 않아요."); return }
         let clean = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(20))
         guard !clean.isEmpty else { done("이름을 적어 주세요."); return }
@@ -244,9 +248,26 @@ final class LetterBox {
             case .success(let v):
                 guard let j = v as? [String: Any], let code = j["code"] as? String else { done("서버의 대답을 읽지 못했어요."); return }
                 if s.saved.profile?.code != code { Log.write("편지: 서버에 등록함") }
-                s.saved.profile = Profile(code: code, name: clean)
+                s.saved.profile = Profile(code: code, name: clean, handle: j["handle"] as? String)
                 s.save()
-                s.refreshFriends { done(nil) }
+                let wanted = handle.trimmingCharacters(in: .whitespacesAndNewlines)
+                if wanted.isEmpty { s.refreshFriends { done(nil) } }
+                else { s.setHandle(wanted) { problem in s.refreshFriends { done(problem) } } }
+            }
+        }
+    }
+
+    /// 아이디를 정하거나 바꾼다. 안 되면 이유를 돌려준다.
+    func setHandle(_ handle: String, done: @escaping (String?) -> Void) {
+        guard online, let server = server else { done("먼저 편지 서버를 시작해 주세요."); return }
+        server.call("omogi_set_handle", ["p_handle": handle]) { [weak self] r in
+            switch r {
+            case .failure(let e): done(e.message)
+            case .success(let v):
+                guard let h = (v as? [String: Any])?["handle"] as? String else { done("서버의 대답을 읽지 못했어요."); return }
+                self?.saved.profile?.handle = h
+                self?.save()
+                done(nil)
             }
         }
     }
@@ -272,7 +293,7 @@ final class LetterBox {
                 self?.serverFriends = rows.compactMap { j in
                     guard let id = j["id"] as? String, let name = j["name"] as? String, let status = j["status"] as? String else { return nil }
                     return Friend(id: id, name: name, publicKey: (j["public_key"] as? String).flatMap { Data(base64Encoded: $0) },
-                                  status: status, incoming: j["incoming"] as? Bool ?? false)
+                                  status: status, incoming: j["incoming"] as? Bool ?? false, handle: j["handle"] as? String)
                 }
                 self?.onChange?()
             }
@@ -280,7 +301,7 @@ final class LetterBox {
         }
     }
 
-    /// 친구 코드로 요청한다. 결과를 한 줄로 돌려준다.
+    /// 아이디나 친구 코드로 요청한다. 결과를 한 줄로 돌려준다.
     func requestFriend(code: String, done: @escaping (String) -> Void) {
         guard online, let server = server else { done("먼저 편지 서버를 시작해 주세요."); return }
         server.call("omogi_request_friend", ["p_code": code]) { [weak self] r in
@@ -402,6 +423,7 @@ final class LetterWindows: NSObject, NSTextViewDelegate, NSWindowDelegate {
     private let list = NSTextView(frame: .zero)
     private let nameField = NSTextField(string: "")
     private let codeField = NSTextField(string: "")
+    private let handleField = NSTextField(string: "")
     private var friendsNote = ""
     private var rowFriends: [Friend] = []
     private let stamp: DateFormatter = {
@@ -418,6 +440,7 @@ final class LetterWindows: NSObject, NSTextViewDelegate, NSWindowDelegate {
             guard let s = self else { return }
             if s.inbox?.isVisible == true { s.renderList() }
             if s.friendsWindow?.isVisible == true { s.renderFriends() }
+            if s.compose?.isVisible == true { s.reloadPicker() }
         }
     }
 
@@ -450,7 +473,12 @@ final class LetterWindows: NSObject, NSTextViewDelegate, NSWindowDelegate {
             let root = w.contentView!
             let toLabel = NSTextField(labelWithString: "받는 사람")
             toLabel.frame = NSRect(x: 20, y: 262, width: 60, height: 18)
-            friendPicker.frame = NSRect(x: 84, y: 256, width: 276, height: 28)
+            friendPicker.frame = NSRect(x: 84, y: 256, width: 176, height: 28)
+            // 친구가 없으면 받는 사람에 연습 상대만 보인다. 여기서 바로 친구를 맺으러 갈 수 있게 한다.
+            let add = NSButton(title: "친구 추가…", target: self, action: #selector(addFriendTapped))
+            add.frame = NSRect(x: 264, y: 254, width: 100, height: 30)
+            add.bezelStyle = .rounded
+            root.addSubview(add)
             let scroll = NSScrollView(frame: NSRect(x: 20, y: 96, width: 340, height: 150))
             scroll.hasVerticalScroller = true
             scroll.borderType = .bezelBorder
@@ -477,15 +505,26 @@ final class LetterWindows: NSObject, NSTextViewDelegate, NSWindowDelegate {
             for v in [toLabel, friendPicker, scroll, counter, hint, sendButton] as [NSView] { root.addSubview(v) }
             compose = w
         }
-        composeFriends = box.friends
-        friendPicker.removeAllItems()
-        friendPicker.addItems(withTitles: composeFriends.map { $0.name })
-        // 친구가 있으면 연습 상대 대신 첫 친구를 골라 둔다.
-        if composeFriends.count > 1 { friendPicker.selectItem(at: 1) }
+        composeFriends = []
+        reloadPicker()
         updateCounter()
         front(compose!)
         compose!.makeFirstResponder(editor)
         box.refreshFriends()
+    }
+
+    @objc private func addFriendTapped() { showFriends() }
+
+    // 친구 목록이 바뀌면(방금 친구가 됐을 때 등) 받는 사람 목록도 고른 것을 지키며 새로 채운다.
+    private func reloadPicker() {
+        let chosen = friendPicker.indexOfSelectedItem >= 0 && friendPicker.indexOfSelectedItem < composeFriends.count
+            ? composeFriends[friendPicker.indexOfSelectedItem].id : nil
+        let hadFriends = composeFriends.count > 1
+        composeFriends = box.friends
+        friendPicker.removeAllItems()
+        friendPicker.addItems(withTitles: composeFriends.map { $0.label })
+        if let i = composeFriends.firstIndex(where: { $0.id == chosen }), hadFriends || composeFriends.count == 1 { friendPicker.selectItem(at: i) }
+        else if composeFriends.count > 1 { friendPicker.selectItem(at: 1) }      // 친구가 생겼으면 연습 상대 대신 첫 친구
     }
 
     func textDidChange(_ notification: Notification) { updateCounter() }
@@ -602,11 +641,19 @@ final class LetterWindows: NSObject, NSTextViewDelegate, NSWindowDelegate {
     private func renderFriends() {
         guard let root = friendsWindow?.contentView else { return }
         // 글을 쓰던 중이면 지우지 않는다.
-        if let editing = friendsWindow?.firstResponder as? NSTextView, editing.delegate === nameField || editing.delegate === codeField,
+        if let editing = friendsWindow?.firstResponder as? NSTextView, editing.delegate === nameField || editing.delegate === codeField || editing.delegate === handleField,
            !editing.string.isEmpty { return }
         root.subviews.forEach { $0.removeFromSuperview() }
         let W: CGFloat = 400
-        var y: CGFloat = 460
+        // 친구가 많으면 창을 그만큼 키운다 (네 명까지는 기본 높이).
+        rowFriends = box.profile == nil ? [] : Array(box.serverFriends.sorted {
+            ($0.incoming ? 0 : $0.status == "accepted" ? 1 : 2) < ($1.incoming ? 0 : $1.status == "accepted" ? 1 : 2) }.prefix(12))
+        var y: CGFloat = 460 + CGFloat(max(0, rowFriends.count - 4)) * 44
+        if let w = friendsWindow, w.contentView?.frame.height != y {
+            let top = w.frame.maxY
+            w.setContentSize(NSSize(width: W, height: y))
+            w.setFrameTopLeftPoint(NSPoint(x: w.frame.minX, y: top))
+        }
 
         guard box.serverAvailable else {
             root.addSubview(label("아직 편지 서버가 연결되지 않았어요", NSRect(x: 24, y: 400, width: W - 48, height: 22), size: 15, weight: .semibold))
@@ -623,25 +670,40 @@ final class LetterWindows: NSObject, NSTextViewDelegate, NSWindowDelegate {
             nameField.frame = NSRect(x: 24, y: 206, width: 220, height: 24)
             nameField.placeholderString = "20자까지"
             root.addSubview(nameField)
-            let go = button("시작하기", NSRect(x: 252, y: 202, width: 100, height: 30), #selector(startTapped))
+            root.addSubview(label("아이디 — 친구가 나를 찾을 때 씁니다 (안 정해도 돼요)", NSRect(x: 24, y: 172, width: W - 48, height: 18), size: 12))
+            handleField.frame = NSRect(x: 24, y: 142, width: 220, height: 24)
+            handleField.placeholderString = "영문 소문자·숫자·_ 3~16자"
+            handleField.font = .monospacedSystemFont(ofSize: 13, weight: .regular)
+            root.addSubview(handleField)
+            let go = button("시작하기", NSRect(x: 252, y: 138, width: 100, height: 30), #selector(startTapped))
             go.controlSize = .regular
             go.font = .systemFont(ofSize: 13)
             root.addSubview(go)
-            if !friendsNote.isEmpty { root.addSubview(label(friendsNote, NSRect(x: 24, y: 160, width: W - 48, height: 36), size: 12, color: .systemRed)) }
+            if !friendsNote.isEmpty { root.addSubview(label(friendsNote, NSRect(x: 24, y: 96, width: W - 48, height: 36), size: 12, color: .systemRed)) }
             return
         }
 
-        root.addSubview(label("\(me.name)의 친구 코드", NSRect(x: 24, y: y - 44, width: 200, height: 18), size: 12, color: .secondaryLabelColor))
-        let code = label(me.code, NSRect(x: 24, y: y - 78, width: 200, height: 30), size: 24, weight: .semibold)
-        code.font = .monospacedSystemFont(ofSize: 24, weight: .semibold)
+        // 내 아이디가 있으면 아이디를 크게, 없으면 친구 코드를 크게 보여 준다.
+        let big = me.handle.map { "@" + $0 } ?? me.code
+        root.addSubview(label(me.handle == nil ? "\(me.name)의 친구 코드" : "\(me.name)의 아이디   ·   친구 코드 \(me.code)",
+                              NSRect(x: 24, y: y - 44, width: 330, height: 18), size: 12, color: .secondaryLabelColor))
+        let code = label(big, NSRect(x: 24, y: y - 78, width: 260, height: 30), size: 24, weight: .semibold)
+        code.font = .monospacedSystemFont(ofSize: big.count > 12 ? 19 : 24, weight: .semibold)
         code.isSelectable = true
         root.addSubview(code)
-        root.addSubview(button("코드 복사", NSRect(x: 290, y: y - 74, width: 86, height: 26), #selector(copyCode)))
-        y -= 96
+        root.addSubview(button("복사", NSRect(x: 290, y: y - 74, width: 86, height: 26), #selector(copyCode)))
+        y -= 92
 
-        root.addSubview(label("친구의 코드를 받았다면", NSRect(x: 24, y: y - 20, width: 200, height: 18), size: 12, color: .secondaryLabelColor))
+        handleField.frame = NSRect(x: 24, y: y - 22, width: 220, height: 22)
+        handleField.placeholderString = me.handle == nil ? "아이디 정하기 (영문 소문자·숫자·_)" : "새 아이디로 바꾸기"
+        handleField.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
+        root.addSubview(handleField)
+        root.addSubview(button(me.handle == nil ? "아이디 정하기" : "아이디 바꾸기", NSRect(x: 252, y: y - 24, width: 100, height: 26), #selector(handleTapped)))
+        y -= 38
+
+        root.addSubview(label("친구의 아이디나 코드를 받았다면", NSRect(x: 24, y: y - 20, width: 240, height: 18), size: 12, color: .secondaryLabelColor))
         codeField.frame = NSRect(x: 24, y: y - 50, width: 220, height: 24)
-        codeField.placeholderString = "8자 코드"
+        codeField.placeholderString = "아이디 또는 8자 코드"
         codeField.font = .monospacedSystemFont(ofSize: 13, weight: .regular)
         root.addSubview(codeField)
         root.addSubview(button("친구 요청", NSRect(x: 252, y: y - 52, width: 86, height: 26), #selector(requestTapped)))
@@ -656,14 +718,13 @@ final class LetterWindows: NSObject, NSTextViewDelegate, NSWindowDelegate {
         root.addSubview(line)
         y -= 16
 
-        rowFriends = box.serverFriends.sorted { ($0.incoming ? 0 : $0.status == "accepted" ? 1 : 2) < ($1.incoming ? 0 : $1.status == "accepted" ? 1 : 2) }
         if rowFriends.isEmpty {
             root.addSubview(label("아직 친구가 없어요. 위의 코드를 친구에게 보내거나, 친구의 코드를 입력해 보세요.",
                                   NSRect(x: 24, y: y - 44, width: W - 48, height: 36), size: 12, color: .secondaryLabelColor))
         }
-        for (i, f) in rowFriends.prefix(8).enumerated() {
+        for (i, f) in rowFriends.enumerated() {
             let state = f.incoming ? "친구 요청이 왔어요" : f.status == "accepted" ? "친구" : "수락을 기다리는 중"
-            root.addSubview(label(f.name, NSRect(x: 24, y: y - 24, width: 150, height: 18), weight: .medium))
+            root.addSubview(label(f.label, NSRect(x: 24, y: y - 24, width: 176, height: 18), weight: .medium))
             root.addSubview(label(state, NSRect(x: 24, y: y - 40, width: 170, height: 15), size: 11, color: .secondaryLabelColor))
             if f.incoming {
                 root.addSubview(button("수락", NSRect(x: 204, y: y - 36, width: 52, height: 24), #selector(acceptTapped(_:)), tag: i))
@@ -684,24 +745,31 @@ final class LetterWindows: NSObject, NSTextViewDelegate, NSWindowDelegate {
         friendsNote = note
         nameField.stringValue = ""
         codeField.stringValue = ""
+        handleField.stringValue = ""
         friendsWindow?.makeFirstResponder(nil)
         renderFriends()
     }
 
     @objc private func startTapped() {
-        let name = nameField.stringValue
+        let name = nameField.stringValue, handle = handleField.stringValue
         friendsWindow?.makeFirstResponder(nil)
-        box.goOnline(name: name) { [weak self] problem in
+        box.goOnline(name: name, handle: handle) { [weak self] problem in
             if problem == nil { self?.box.poll(serverNow: true) }
             self?.redrawFriends(note: problem ?? "")
         }
     }
 
     @objc private func copyCode() {
-        guard let code = box.profile?.code else { return }
+        guard let me = box.profile else { return }
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(code, forType: .string)
-        redrawFriends(note: "코드를 복사했어요. 친구에게 보내 주세요.")
+        NSPasteboard.general.setString(me.handle.map { "@" + $0 } ?? me.code, forType: .string)
+        redrawFriends(note: "복사했어요. 친구에게 보내 주세요.")
+    }
+
+    @objc private func handleTapped() {
+        let wanted = handleField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !wanted.isEmpty else { return }
+        box.setHandle(wanted) { [weak self] problem in self?.redrawFriends(note: problem ?? "아이디를 정했어요.") }
     }
 
     @objc private func requestTapped() {

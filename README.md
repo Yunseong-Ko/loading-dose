@@ -84,7 +84,7 @@ assets/                                          README용 아이콘과 시연 �
 </p>
 
 <p align="center">
-  <a href="https://github.com/Yunseong-Ko/loading-dose/releases/tag/omogi-v0.1.0"><b>Omogi 내려받기 (Mac)</b></a>
+  <a href="https://github.com/Yunseong-Ko/loading-dose/releases/tag/omogi-v0.1.1"><b>Omogi 내려받기 (Mac)</b></a>
   &nbsp;·&nbsp;
   <a href="assets/omogi-demo.mp4">영상으로 보기 (MP4)</a>
 </p>
@@ -94,12 +94,15 @@ assets/                                          README용 아이콘과 시연 �
 - 집중 모드: 브라우저에서 유튜브·인스타그램을 열면 오모기가 날아가 탭을 닫습니다 (손쉬운 사용 권한 필요, 기본 꺼짐).
 - 습관 알림: 물 마시기, 눈 쉬기, 스트레칭을 때맞춰 알려 줍니다.
 - 일정 알림: Mac 캘린더 일정이 시작하기 10분 전에 알려 줍니다 (캘린더 접근 필요, 기본 꺼짐).
-- 편지 (만드는 중): 쪽지를 쓰면 오모기가 물고 날아가 30분~3시간 뒤에 전하고, 가끔은 잃어버립니다. 친구 코드로 친구를 맺어 주고받으며, 내용은 받는 사람만 열 수 있게 잠가서 보냅니다. 서버는 Supabase (`omogi/server/schema.sql`, 주소와 공개용 키는 `omogi/server.json`), 없으면 나에게 보내는 연습 배달만 됩니다.
+- 편지 (만드는 중): 쪽지를 쓰면 오모기가 물고 날아가 30분~3시간 뒤에 전하고, 가끔은 잃어버립니다. 아이디나 친구 코드로 친구를 맺어 주고받으며, 내용은 받는 사람만 열 수 있게 잠가서 보냅니다. 서버는 Supabase (`omogi/server/schema.sql`, 주소와 공개용 키는 `omogi/server.json`), 없으면 나에게 보내는 연습 배달만 됩니다.
+- 설정: Omogi 앱을 다시 열면 설정 창이 뜨고, 화면의 오모기를 오른쪽 클릭해도 메뉴가 나옵니다 (메뉴 막대 아이콘이 가려진 Mac 용).
 - 빌드: `omogi/build.sh` → `omogi/build/Omogi.app`. 조정은 `~/Library/Application Support/Omogi/config.json`.
 
 <p align="center">
   <img src="assets/omogi-poses.png" width="640" alt="오모기의 자세 열두 가지">
 </p>
+
+제작자: @hi20010205
 
 위 영상과 그림은 앱과 같은 스프라이트로 그린 것입니다 (`tools/make_omogi_demo.py`, 화면 녹화가 아닙니다).
 

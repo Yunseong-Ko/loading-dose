@@ -10,7 +10,9 @@ struct ServerError: Error {
     /// 사용자에게 보여 줄 말
     var message: String {
         switch code {
-        case "omogi:no_such_code": return "그 친구 코드를 찾지 못했어요."
+        case "omogi:no_such_code": return "그 아이디나 코드를 찾지 못했어요."
+        case "omogi:bad_handle": return "아이디는 영문 소문자, 숫자, 밑줄(_)로 3~16자여야 해요."
+        case "omogi:handle_taken": return "이미 다른 사람이 쓰는 아이디예요."
         case "omogi:too_many_requests": return "보낸 친구 요청이 너무 많아요. 수락을 기다려 주세요."
         case "omogi:not_friends": return "아직 친구가 아니에요."
         case "omogi:daily_limit": return "한 친구에게는 하루에 \(letterDailyLimit)통까지만 보낼 수 있어요."

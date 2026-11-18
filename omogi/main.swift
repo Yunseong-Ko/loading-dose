@@ -129,6 +129,18 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         buildMenu()
         buildMainMenu()
         pet.onMailOpen = { [weak self] in self?.letterWindows.showInbox() }
+        // 처음 켰을 때는 설정 창을 보여 준다 (메뉴 막대 아이콘이 다른 아이콘에 밀려 안 보이는 Mac 이 많다).
+        if !UserDefaults.standard.bool(forKey: "welcomed"), !args.contains("--send-test") {
+            UserDefaults.standard.set(true, forKey: "welcomed")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { self.openSettingsWindow() }
+        }
+        if let i = args.firstIndex(of: "--snapshot-settings"), i + 1 < args.count {
+            openSettingsWindow()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                self.settingsWindow.snapshot(to: URL(fileURLWithPath: args[i + 1]))
+                NSApp.terminate(nil)
+            }
+        }
         letters.start()
         // 동작 확인용: 실행한 뒤 연습 편지 한 통을 보낸다.
         if let i = args.firstIndex(of: "--send-test"), i + 1 < args.count {
@@ -138,12 +150,30 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 }
             }
         }
-        Log.write("──── 실행 v0.1.0 trusted=\(AXIsProcessTrusted()) focus=\(FocusGuard.enabled) calendar=\(CalendarWatch.enabled) server=\(Server.shared != nil)")
+        Log.write("──── 실행 v0.1.1 trusted=\(AXIsProcessTrusted()) focus=\(FocusGuard.enabled) calendar=\(CalendarWatch.enabled) server=\(Server.shared != nil)")
         pet.setOverFullScreen(FocusGuard.enabled)
         pet.start()
         focus.start()
         calendarWatch.start()
     }
+
+    // 실행 중에 앱 아이콘을 다시 열면(Finder·Launchpad·Spotlight) 설정 창을 보여 준다.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        openSettingsWindow()
+        return true
+    }
+
+    private lazy var settingsWindow = SettingsWindow(app: self)
+    @objc func openSettingsWindow() { settingsWindow.show() }
+
+    /// 설정 창이 그릴 지금 상태
+    var toggles: [(title: String, note: String, on: Bool, action: Selector)] {
+        return [("오모기 보이기", "화면 아래에서 돌아다닙니다. 집어서 옮길 수 있어요.", Pet.enabled, #selector(togglePet)),
+                ("습관 알림", "물 마시기, 눈 쉬기, 스트레칭을 때맞춰 알려 줍니다.", Pet.habitsOn, #selector(toggleHabits)),
+                ("집중 모드", "유튜브·인스타그램을 열면 날아가 탭을 닫습니다. 손쉬운 사용 권한이 필요해요.", FocusGuard.enabled, #selector(toggleFocus)),
+                ("일정 알림", "Mac 캘린더 일정을 시작 10분 전에 알려 줍니다. 캘린더 접근이 필요해요.", CalendarWatch.enabled, #selector(toggleCalendar))]
+    }
+    var unreadLetters: Int { return letters.unreadCount }
 
     private func buildMenu() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -170,6 +200,9 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         friendsItem.target = self
         menu.addItem(friendsItem)
         menu.addItem(.separator())
+        let settingsItem = NSMenuItem(title: "설정 창 열기…", action: #selector(openSettingsWindow), keyEquivalent: "")
+        settingsItem.target = self
+        menu.addItem(settingsItem)
         let previewItem = NSMenuItem(title: "동작 보기", action: nil, keyEquivalent: "")
         let previewMenu = NSMenu()
         for (title, key) in [("물 마시기", "drink"), ("둥지 짓고 자기", "nest"), ("꾸벅꾸벅 졸기", "nod"),
@@ -192,6 +225,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Omogi 종료", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
+        pet.menu = menu          // 오모기를 오른쪽 클릭해도 같은 메뉴가 뜬다
     }
 
     // 메뉴를 열 때마다 맨 윗줄에 지금 상태를 적는다.
@@ -236,17 +270,20 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc func togglePet() {
+        defer { settingsWindow.refresh() }
         pet.setEnabled(!Pet.enabled)
         petItem.state = Pet.enabled ? .on : .off
     }
 
     @objc func toggleHabits() {
+        defer { settingsWindow.refresh() }
         Pet.habitsOn = !Pet.habitsOn
         habitsItem.state = Pet.habitsOn ? .on : .off
     }
 
     // 집중 모드는 브라우저 창 제목을 읽어야 해서, 켤 때 손쉬운 사용 권한이 없으면 요청 창을 띄운다.
     @objc func toggleFocus() {
+        defer { settingsWindow.refresh() }
         FocusGuard.enabled = !FocusGuard.enabled
         focusItem.state = FocusGuard.enabled ? .on : .off
         pet.setOverFullScreen(FocusGuard.enabled)
@@ -262,12 +299,14 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if CalendarWatch.enabled {
             CalendarWatch.enabled = false
             calendarItem.state = .off
+            settingsWindow.refresh()
             return
         }
         calendarWatch.requestAccess { [weak self] ok in
             guard let s = self else { return }
             CalendarWatch.enabled = ok
             s.calendarItem.state = ok ? .on : .off
+            s.settingsWindow.refresh()
             Log.write("일정 알림 \(ok ? "켬" : "켜지 못함 (캘린더 접근 거절)")")
             if ok { s.calendarWatch.check() }
             else {
@@ -289,6 +328,89 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc func openLog() {
         Log.write("기록 파일을 엶")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { NSWorkspace.shared.open(Log.url) }
+    }
+}
+
+// ───────────────────────── 설정 창 ─────────────────────────
+// 메뉴 막대 아이콘과 같은 일을 하는 창. 앱을 처음 켰을 때와, 켜져 있는 앱을 다시 열었을 때 뜬다.
+final class SettingsWindow: NSObject {
+    private unowned let app: AppController
+    private var window: NSWindow?
+    init(app: AppController) { self.app = app }
+
+    func show() {
+        if window == nil {
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 420, height: 470), styleMask: [.titled, .closable],
+                             backing: .buffered, defer: false)
+            w.title = "Omogi"
+            w.isReleasedWhenClosed = false
+            w.center()
+            window = w
+        }
+        refresh()
+        NSApp.activate(ignoringOtherApps: true)
+        window?.makeKeyAndOrderFront(nil)
+    }
+
+    private func label(_ text: String, _ frame: NSRect, size: CGFloat, weight: NSFont.Weight = .regular, color: NSColor = .labelColor) -> NSTextField {
+        let l = NSTextField(wrappingLabelWithString: text)
+        l.frame = frame
+        l.font = .systemFont(ofSize: size, weight: weight)
+        l.textColor = color
+        return l
+    }
+
+    func refresh() {
+        guard let root = window?.contentView else { return }
+        root.subviews.forEach { $0.removeFromSuperview() }
+        if let face = app.pet.faceImage(height: 46) {
+            let v = NSImageView(frame: NSRect(x: 24, y: 404, width: 40, height: 46))
+            v.image = face
+            v.imageScaling = .scaleNone
+            root.addSubview(v)
+        }
+        root.addSubview(label("Omogi", NSRect(x: 76, y: 424, width: 300, height: 24), size: 18, weight: .semibold))
+        root.addSubview(label("화면에 사는 작은 뱁새", NSRect(x: 76, y: 404, width: 300, height: 18), size: 12, color: .secondaryLabelColor))
+
+        var y: CGFloat = 372
+        for t in app.toggles {
+            let box = NSButton(checkboxWithTitle: t.title, target: app, action: t.action)
+            box.frame = NSRect(x: 24, y: y, width: 360, height: 20)
+            box.font = .systemFont(ofSize: 13, weight: .medium)
+            box.state = t.on ? .on : .off
+            root.addSubview(box)
+            root.addSubview(label(t.note, NSRect(x: 44, y: y - 20, width: 350, height: 16), size: 11, color: .secondaryLabelColor))
+            y -= 52
+        }
+
+        let line = NSBox(frame: NSRect(x: 24, y: y + 22, width: 372, height: 1))
+        line.boxType = .separator
+        root.addSubview(line)
+        let unread = app.unreadLetters
+        let buttons: [(String, Selector)] = [("편지 쓰기…", #selector(AppController.openCompose)),
+                                             (unread > 0 ? "편지함 (\(unread))…" : "편지함…", #selector(AppController.openInbox)),
+                                             ("친구…", #selector(AppController.openFriends))]
+        for (i, (title, sel)) in buttons.enumerated() {
+            let b = NSButton(title: title, target: app, action: sel)
+            b.frame = NSRect(x: 20 + CGFloat(i) * 128, y: y - 22, width: 124, height: 32)
+            b.bezelStyle = .rounded
+            root.addSubview(b)
+        }
+        root.addSubview(label("이 창은 Omogi 앱을 다시 열면 언제든 뜹니다. 화면의 오모기를 오른쪽 클릭하거나, 화면 맨 위 메뉴 막대의 새 얼굴 아이콘을 눌러도 같은 메뉴가 나와요. (아이콘이 많으면 새 얼굴이 가려져 안 보일 수 있어요.)",
+                              NSRect(x: 24, y: 52, width: 372, height: 62), size: 11, color: .secondaryLabelColor))
+        root.addSubview(label("제작자: @hi20010205  ·  v0.1.1", NSRect(x: 24, y: 20, width: 250, height: 16), size: 11, color: .tertiaryLabelColor))
+        let quit = NSButton(title: "Omogi 종료", target: NSApp, action: #selector(NSApplication.terminate(_:)))
+        quit.frame = NSRect(x: 290, y: 14, width: 110, height: 28)
+        quit.bezelStyle = .rounded
+        quit.controlSize = .small
+        root.addSubview(quit)
+    }
+
+    // 동작 확인용: 창을 PNG 로 저장한다.
+    func snapshot(to url: URL) {
+        guard let v = window?.contentView, let rep = v.bitmapImageRepForCachingDisplay(in: v.bounds) else { return }
+        v.cacheDisplay(in: v.bounds, to: rep)
+        try? rep.representation(using: .png, properties: [:])?.write(to: url)
     }
 }
 

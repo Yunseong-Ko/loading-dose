@@ -23,8 +23,16 @@ final class PetView: NSView {
     var onDown: (() -> Void)?
     var onUp: (() -> Void)?
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { return true }
-    override func mouseDown(with event: NSEvent) { onDown?() }
     override func mouseUp(with event: NSEvent) { onUp?() }
+    /// 오른쪽 클릭(또는 Control-클릭)하면 뜨는 메뉴. 메뉴 막대 아이콘이 가려져 안 보일 때도 여기로 들어갈 수 있다.
+    var contextMenu: NSMenu?
+    override func rightMouseDown(with event: NSEvent) {
+        if let m = contextMenu { NSMenu.popUpContextMenu(m, with: event, for: self) }
+    }
+    override func mouseDown(with event: NSEvent) {
+        if event.modifierFlags.contains(.control), let m = contextMenu { NSMenu.popUpContextMenu(m, with: event, for: self); return }
+        onDown?()
+    }
 }
 
 final class Pet: NSObject {
@@ -114,6 +122,12 @@ final class Pet: NSObject {
     /// 편지를 물고 기다리는 펫을 눌렀을 때
     var onMailOpen: (() -> Void)?
     var isHoldingMail: Bool { return mode == .mail || heldFromMail || (errand == .receive && (mode == .depart || mode == .away || mode == .arrive)) }
+
+    /// 펫을 오른쪽 클릭하면 뜨는 메뉴
+    var menu: NSMenu? {
+        get { return (panel.contentView as? PetView)?.contextMenu }
+        set { (panel.contentView as? PetView)?.contextMenu = newValue }
+    }
 
     /// 카드 옆에 앉을 자리(발바닥 좌표). 카드가 없으면 nil.
     var perchTarget: (() -> CGPoint?)?
