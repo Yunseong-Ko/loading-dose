@@ -79,6 +79,16 @@ assets/                                          README용 아이콘과 시연 �
 
 ## Omogi (펫 앱)
 
+<p align="center">
+  <img src="assets/omogi-demo.gif" width="720" alt="오모기가 화면 아래에서 돌아다니고, 졸고, 둥지를 짓고, 편지를 물고 날아가는 모습">
+</p>
+
+<p align="center">
+  <a href="https://github.com/Yunseong-Ko/loading-dose/releases/tag/omogi-v0.1.0"><b>Omogi 내려받기 (Mac)</b></a>
+  &nbsp;·&nbsp;
+  <a href="assets/omogi-demo.mp4">영상으로 보기 (MP4)</a>
+</p>
+
 `omogi/` 는 Loading Dose 와 별개인 Mac 메뉴 막대 앱입니다. 화면 아래에 흰오목눈이 "오모기"가 살면서 돌아다니고, 졸고, 둥지를 짓습니다.
 
 - 집중 모드: 브라우저에서 유튜브·인스타그램을 열면 오모기가 날아가 탭을 닫습니다 (손쉬운 사용 권한 필요, 기본 꺼짐).
@@ -86,6 +96,12 @@ assets/                                          README용 아이콘과 시연 �
 - 일정 알림: Mac 캘린더 일정이 시작하기 10분 전에 알려 줍니다 (캘린더 접근 필요, 기본 꺼짐).
 - 편지 (만드는 중): 쪽지를 쓰면 오모기가 물고 날아가 30분~3시간 뒤에 전하고, 가끔은 잃어버립니다. 친구 코드로 친구를 맺어 주고받으며, 내용은 받는 사람만 열 수 있게 잠가서 보냅니다. 서버는 Supabase (`omogi/server/schema.sql`, 주소와 공개용 키는 `omogi/server.json`), 없으면 나에게 보내는 연습 배달만 됩니다.
 - 빌드: `omogi/build.sh` → `omogi/build/Omogi.app`. 조정은 `~/Library/Application Support/Omogi/config.json`.
+
+<p align="center">
+  <img src="assets/omogi-poses.png" width="640" alt="오모기의 자세 열두 가지">
+</p>
+
+위 영상과 그림은 앱과 같은 스프라이트로 그린 것입니다 (`tools/make_omogi_demo.py`, 화면 녹화가 아닙니다).
 
 Loading Dose 는 `omogi/pet.swift` 를 같이 써서, 카드가 떠 있는 동안에만 오모기가 카드 옆에 나타나 정답·오답에 반응합니다.
 
