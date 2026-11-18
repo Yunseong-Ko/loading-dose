@@ -1849,6 +1849,12 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
         if demo { startDemo() }
+        // 동작 확인용: 미리 보기 카드 옆에서 정답 반응을 여섯 번 이어서 일으킨다 (커지다가 터지는 동작).
+        if args.contains("--pet-combo") {
+            for i in 0..<6 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0 + Double(i) * 1.0) { self.pet.react(correct: true) }
+            }
+        }
         genWindow.onSaved = { [weak self] in self?.settings.refresh() }
         // 동작 확인용: 설정 창을 띄워 PNG 로 저장하고 끝낸다.
         if let i = shotSettings, i + 1 < args.count {

@@ -35,6 +35,82 @@ final class PetView: NSView {
     }
 }
 
+/// 펑 터졌을 때 잠깐 나타나는 작은 새 한 마리. 튀어 나가 잠시 파닥이다가 화면 밖으로 날아간다.
+fileprivate final class MiniBird {
+    private let panel: NSPanel
+    private let layer = CALayer()
+    private let hop: CGImage
+    private let fly: [CGImage]
+    private var pos: CGPoint                       // 창의 가운데
+    private var vel: CGPoint
+    private let born = CACurrentMediaTime()
+    private let leaveAfter: Double
+    private let exit: CGPoint
+    private var from = CGPoint.zero
+    private var leaving = false
+    private let size = CGSize(width: 72, height: 56)      // 본래 크기의 3분의 2
+
+    init(hop: CGImage, fly: [CGImage], at start: CGPoint, velocity: CGPoint, leaveAfter: Double, exit: CGPoint) {
+        self.hop = hop
+        self.fly = fly
+        pos = start
+        vel = velocity
+        self.leaveAfter = leaveAfter
+        self.exit = exit
+        panel = NSPanel(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless, .nonactivatingPanel],
+                        backing: .buffered, defer: false)
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = false
+        panel.ignoresMouseEvents = true
+        panel.level = .floating
+        panel.hidesOnDeactivate = false
+        panel.isReleasedWhenClosed = false
+        panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+        let view = NSView(frame: NSRect(origin: .zero, size: size))
+        view.wantsLayer = true
+        panel.contentView = view
+        layer.frame = CGRect(origin: .zero, size: size)
+        layer.contentsGravity = .resize
+        layer.magnificationFilter = .nearest
+        layer.minificationFilter = .nearest
+        view.layer?.addSublayer(layer)
+        place(hop, right: velocity.x >= 0)
+        panel.orderFrontRegardless()
+    }
+
+    private func place(_ image: CGImage, right: Bool) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        layer.contents = image
+        layer.transform = CATransform3DMakeScale(right ? 1 : -1, 1, 1)
+        CATransaction.commit()
+        panel.setFrameOrigin(CGPoint(x: (pos.x - size.width / 2).rounded(), y: (pos.y - size.height / 2).rounded()))
+    }
+
+    /// 한 틱 움직인다. 화면 밖으로 다 나갔으면 false.
+    func update(dt: CGFloat, now: Double) -> Bool {
+        let t = now - born
+        if t < leaveAfter {
+            // 튀어 나간 뒤 속도가 줄면서 그 자리에서 파닥인다.
+            let drag = CGFloat(exp(-3.2 * Double(dt)))
+            vel = CGPoint(x: vel.x * drag, y: vel.y * drag)
+            pos = CGPoint(x: pos.x + vel.x * dt, y: pos.y + vel.y * dt + CGFloat(sin(t * 9)) * 0.6)
+            place(t < 0.3 ? hop : fly[Int(t * 14) % fly.count], right: vel.x >= 0)
+            return true
+        }
+        if !leaving { leaving = true; from = pos }
+        let k = CGFloat(min(1, (t - leaveAfter) / 1.3))
+        let e = k * k
+        pos = CGPoint(x: from.x + (exit.x - from.x) * e, y: from.y + (exit.y - from.y) * e + sin(k * .pi) * 40)
+        place(fly[Int(t * 14) % fly.count], right: exit.x >= from.x)
+        if k >= 1 { remove(); return false }
+        return true
+    }
+
+    func remove() { panel.orderOut(nil) }
+}
+
 final class Pet: NSObject {
     private static let defaultsKey = "petOn"
     /// 물·눈 쉬기·스트레칭 알림을 할지 (기본 켬)
@@ -58,6 +134,7 @@ final class Pet: NSObject {
     }
     private enum Mode {
         case sit, hop, sleep, flyOut, perch, flyHome, roam, roll, chase, peck, held, fall, nest, drink, eyes, stretch, calendar
+        case tumble                                // 던져져서 바닥을 구르는 중
         case depart, away, arrive, mail, lost      // 편지 심부름: 화면 밖으로 나감 → 밖에 있음 → 돌아옴 → 편지를 물고 기다림 / 잃어버림
     }
     private enum Errand { case send, receive }
@@ -122,6 +199,19 @@ final class Pet: NSObject {
     /// 편지를 물고 기다리는 펫을 눌렀을 때
     var onMailOpen: (() -> Void)?
     var isHoldingMail: Bool { return mode == .mail || heldFromMail || (errand == .receive && (mode == .depart || mode == .away || mode == .arrive)) }
+
+    // 던지기: 집은 채로 빠르게 움직이다 놓으면 그 속도로 날아가 바닥을 구른다.
+    private var heldVel = CGPoint.zero            // 집힌 동안의 속도 (pt/초, 부드럽게 평균 낸 값)
+    private var throwVX: CGFloat = 0              // 던져진 뒤의 가로 속도
+    private var rollPhase: CGFloat = 0            // 구른 거리(자세를 고르는 데 쓴다)
+
+    // 연속 정답 (cardOnly): 맞힐수록 몸이 커지다가 다섯 번째에 펑 터져 여러 마리가 되고, 곧 한 마리만 남는다.
+    private var streak = 0
+    private var growth: CGFloat = 1               // 지금 그려지는 배율
+    private var growthTarget: CGFloat = 1
+    private var popAt = 0.0                       // 터질 때 (0 이면 예정 없음)
+    private var minis: [MiniBird] = []
+    private let popStreak = 5
 
     /// 펫을 오른쪽 클릭하면 뜨는 메뉴
     var menu: NSMenu? {
@@ -363,6 +453,7 @@ final class Pet: NSObject {
         let m = NSEvent.mouseLocation
         downAt = CACurrentMediaTime()
         downPos = m
+        heldVel = .zero
         grab = CGPoint(x: m.x - pos.x, y: m.y - pos.y)
         lookUntil = 0
         reactUntil = 0
@@ -371,7 +462,11 @@ final class Pet: NSObject {
 
     private func drop() {
         guard shown, mode == .held else { return }
-        fallSpeed = 0
+        // 놓는 순간의 속도를 이어받는다 (위로 던지면 잠깐 솟았다가 떨어진다).
+        let fast = hypot(heldVel.x, heldVel.y) > 320 && !reduceMotion()
+        throwVX = fast ? max(-1700, min(1700, heldVel.x)) : 0
+        fallSpeed = fast ? -max(-300, min(1000, heldVel.y)) : 0
+        rollPhase = 0
         // 편지를 물고 있을 때 옮기지 않고 살짝 누르기만 했으면 편지를 연다.
         let m = NSEvent.mouseLocation
         if heldFromMail, CACurrentMediaTime() - downAt < 0.4, hypot(m.x - downPos.x, m.y - downPos.y) < 6 {
@@ -385,6 +480,9 @@ final class Pet: NSObject {
     }
 
     func stop() {
+        minis.forEach { $0.remove() }
+        minis = []
+        popAt = 0
         endChase()
         bubble.orderOut(nil)
         for m in mouseMonitors { NSEvent.removeMonitor(m) }
@@ -412,7 +510,7 @@ final class Pet: NSObject {
     func chase(to target: CGPoint, act: @escaping () -> Void, done: @escaping () -> Void) {
         // 카드 옆에 앉아 있다가도 간다 (답을 기다리며 딴짓하는 때가 바로 막을 때다). 이미 출동 중이거나 구르는 중일 때만 미룬다.
         guard shown, mode != .chase, mode != .peck, mode != .roll, mode != .held, mode != .fall,
-              mode != .depart, mode != .away, mode != .arrive else { done(); return }
+              mode != .depart, mode != .away, mode != .arrive, mode != .tumble else { done(); return }
         if mode == .sit || mode == .hop || mode == .sleep { homeX = pos.x }
         lookUntil = 0
         chaseAct = act
@@ -438,6 +536,8 @@ final class Pet: NSObject {
             homeX = pos.x
             shown = true
             lastTick = CACurrentMediaTime()
+            growthTarget = growthFor(streak)             // 지난 카드까지의 연속 정답만큼 큰 채로 온다
+            growth = growthTarget
             movePanel(lift: 0)
             panel.orderFrontRegardless()
             fly(to: target, as: .flyOut)
@@ -456,6 +556,19 @@ final class Pet: NSObject {
         reactHappy = correct
         reactStart = CACurrentMediaTime()
         reactUntil = reactStart + (correct ? 0.8 : 1.1)
+        if cardOnly, !reduceMotion() {
+            if correct {
+                streak += 1
+                growthTarget = growthFor(streak)
+                if streak >= popStreak {                 // 화면을 가릴 만큼 부풀었다가 펑
+                    popAt = reactStart + 0.9
+                    reactUntil = reactStart + 2.0
+                }
+            } else {
+                streak = 0
+                growthTarget = 1
+            }
+        }
         retime()
     }
 
@@ -463,6 +576,30 @@ final class Pet: NSObject {
         guard shown, mode == .perch || mode == .flyOut else { return }
         let screen = currentScreen()
         fly(to: CGPoint(x: homeX, y: cardOnly ? offstageY : floorY(on: screen)), as: .flyHome)
+    }
+
+    // 화면 옆 끝에 닿으면 튕겨 나온다.
+    private func bounceOffWalls() {
+        let vf = currentScreen().visibleFrame
+        if pos.x < vf.minX + 30 { pos.x = vf.minX + 30; throwVX = abs(throwVX) * 0.55 }
+        else if pos.x > vf.maxX - 30 { pos.x = vf.maxX - 30; throwVX = -abs(throwVX) * 0.55 }
+    }
+
+    // 떨어지거나 구르기를 마치고 그 자리에 자리 잡는다.
+    private func settle(_ now: Double, dizzy: Bool) {
+        homeX = pos.x
+        sitsInARow = 0
+        setMode(.sit)
+        if heldFromMail {                                // 편지를 문 채로 옮겨졌으면 계속 물고 기다린다
+            heldFromMail = false
+            setMode(.mail)
+            say(mailText, seconds: 3600)
+        } else if perchTarget?() != nil { goToCard() }
+        else {
+            lookUntil = now + (dizzy ? 2.8 : 1.6)
+            tiltAt = now + 0.5
+            if dizzy { nextAction = lookUntil + Double.random(in: 2...5) }
+        }
     }
 
     private func fly(to target: CGPoint, as m: Mode) {
@@ -502,6 +639,7 @@ final class Pet: NSObject {
     private func retime() {
         let moving = mode == .hop || mode == .flyOut || mode == .flyHome || mode == .roam || mode == .roll
             || mode == .chase || mode == .peck || mode == .held || mode == .fall || mode == .depart || mode == .arrive
+            || mode == .tumble || !minis.isEmpty || popAt > 0 || abs(growthTarget - growth) > 0.004
             || CACurrentMediaTime() < reactUntil
         let want: TimeInterval = moving ? 1.0 / 30 : 1.0 / 12
         guard want != interval || timer == nil else { return }
@@ -707,26 +845,45 @@ final class Pet: NSObject {
         case .held:
             // 집힌 동안: 마우스를 따라가며 대롱대롱
             let m = NSEvent.mouseLocation
-            pos = CGPoint(x: m.x - grab.x, y: m.y - grab.y)
+            let next = CGPoint(x: m.x - grab.x, y: m.y - grab.y)
+            if dt > 0.001 {
+                heldVel = CGPoint(x: heldVel.x * 0.55 + (next.x - pos.x) / dt * 0.45, y: heldVel.y * 0.55 + (next.y - pos.y) / dt * 0.45)
+            }
+            pos = next
             frame = Int(now / 0.28) % 2 == 0 ? .front : .tilt
         case .fall:
             // 놓으면 그 자리 아래 바닥으로 떨어져 앉는다. 카드가 떠 있으면 다시 카드로 간다.
             let floor = floorY(on: currentScreen())
             fallSpeed += 1800 * dt
             pos.y -= fallSpeed * dt
-            frame = .hop1
+            pos.x += throwVX * dt
+            bounceOffWalls()
+            if abs(throwVX) > 220 {                      // 던져졌으면 공중에서 빙글빙글
+                faceRight = throwVX > 0
+                rollPhase += dt * 11
+                frame = [Frame.nod2, .roll1, .roll2, .roll3][Int(rollPhase) % 4]
+            } else { frame = .hop1 }
             if pos.y <= floor {
                 pos.y = floor
-                homeX = pos.x
-                sitsInARow = 0
-                setMode(.sit)
-                frame = .hop2
-                if heldFromMail {                        // 편지를 문 채로 옮겨졌으면 계속 물고 기다린다
-                    heldFromMail = false
-                    setMode(.mail)
-                    say(mailText, seconds: 3600)
-                } else if perchTarget?() != nil { goToCard() }
-                else { lookUntil = now + 1.6; tiltAt = now + 0.5 }
+                if abs(throwVX) > 220 {                  // 그대로 바닥을 데굴데굴
+                    setMode(.tumble)
+                } else {
+                    settle(now, dizzy: false)
+                    frame = .hop2
+                }
+            }
+        case .tumble:
+            // 바닥에 닿은 뒤: 마찰로 느려지면서 구르다가 멈추면 어리둥절해한다.
+            throwVX *= CGFloat(exp(-2.4 * Double(dt)))
+            pos.x += throwVX * dt
+            bounceOffWalls()
+            faceRight = throwVX > 0
+            rollPhase += abs(throwVX) * dt / 34          // 34pt 마다 사분의 일 바퀴
+            frame = [Frame.nod2, .roll1, .roll2, .roll3][Int(rollPhase) % 4]
+            if abs(throwVX) < 55 {
+                throwVX = 0
+                settle(now, dizzy: true)
+                frame = .front
             }
         case .peck:
             // 콕콕 쪼다가(0.7초) 할 일을 하고, 잠깐 뿌듯해한 뒤 돌아간다.
@@ -741,7 +898,8 @@ final class Pet: NSObject {
                 }
             }
         case .perch:
-            if let target = perchTarget?() { pos = target } else { goHome() }
+            // 몸이 커져도 카드를 가리지 않게, 커진 만큼 왼쪽으로 물러난다.
+            if let target = perchTarget?() { pos = CGPoint(x: target.x - (growth - 1) * 26, y: target.y) } else { goHome() }
             frame = Int(now / 0.9) % 2 == 0 ? .sit0 : .sit1
         }
 
@@ -766,15 +924,69 @@ final class Pet: NSObject {
             else if frame == .front { frame = .frontBlink }
         }
 
+        // 연속 정답: 배율을 부드럽게 따라가고, 때가 되면 터뜨린다.
+        if abs(growthTarget - growth) > 0.004 { growth += (growthTarget - growth) * min(1, dt * 9) }
+        else if growth != growthTarget { growth = growthTarget; retime() }
+        if popAt > 0, now >= popAt { pop() }
+        if !minis.isEmpty {
+            minis = minis.filter { $0.update(dt: dt, now: now) }
+            if minis.isEmpty { retime() }
+        }
+
         movePanel(lift: lift)
         show(frame)
         updateBubble(now)
     }
 
+    // 연속 정답 수에 따른 배율. 한 번 맞힐 때마다 같은 비율로 커져서, 다섯 번째에는 몸이 화면 높이의 절반 가까이 된다.
+    private func growthFor(_ n: Int) -> CGFloat {
+        guard n > 0 else { return 1 }
+        let screenH = (NSScreen.screens.first { $0.frame.contains(pos) } ?? NSScreen.main)?.frame.height ?? 900
+        let full = max(3, screenH * 0.46 / (17 * zoom))          // 몸 높이는 스프라이트 17픽셀
+        return CGFloat(pow(Double(full), Double(min(n, popStreak)) / Double(popStreak)))
+    }
+
+    // 펑: 큰 몸이 사라지고 작은 새 여럿이 튀어 나갔다가, 잠시 뒤 하나씩 날아가고 원래 한 마리만 남는다.
+    private func pop() {
+        popAt = 0
+        streak = 0
+        let center = CGPoint(x: panel.frame.midX, y: panel.frame.midY)
+        growth = 1
+        growthTarget = 1
+        guard Frame.hop1.rawValue < frames.count else { return }
+        let screen = currentScreen().frame
+        let flyImages = [Frame.fly0, .fly1, .fly2, .fly1].map { frames[$0.rawValue] }
+        let n = 14
+        let up: CGFloat = center.y > screen.midY ? -0.8 : 1      // 화면 위쪽에 있으면 아래로, 아래쪽에 있으면 위로 퍼진다
+        for i in 0..<n {
+            let angle = Double.pi * (0.12 + 0.76 * Double(i) / Double(n - 1)) + Double.random(in: -0.12...0.12)   // 반원으로 퍼진다
+            let speed = CGFloat.random(in: 380...900)
+            let goRight = cos(angle) > 0
+            let exit = CGPoint(x: goRight ? screen.maxX + 80 : screen.minX - 80, y: center.y + CGFloat.random(in: -160...220))
+            minis.append(MiniBird(hop: frames[Frame.hop1.rawValue], fly: flyImages, at: center,
+                                  velocity: CGPoint(x: CGFloat(cos(angle)) * speed, y: CGFloat(sin(angle)) * speed * up),
+                                  leaveAfter: 1.6 + Double(i) * 0.22, exit: exit))
+        }
+        retime()
+    }
+
     private func movePanel(lift: CGFloat) {
+        // 연속 정답으로 커졌으면 창도 그만큼 키운다 (발 위치는 그대로).
+        let size = CGSize(width: (panelSize.width * growth).rounded(), height: (panelSize.height * growth).rounded())
+        if panel.frame.size != size {
+            panel.setContentSize(size)
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            sprite.frame = CGRect(origin: .zero, size: size)
+            CATransaction.commit()
+        }
         // 스프라이트의 발은 가운데가 아니라서, 보는 방향에 따라 창을 다르게 놓는다.
-        let feetX = (faceRight ? feetPx : framePx.width - feetPx) * zoom
-        let origin = CGPoint(x: (pos.x - feetX).rounded(), y: (pos.y - floorInset + lift).rounded())
+        let feetX = (faceRight ? feetPx : framePx.width - feetPx) * zoom * growth
+        var origin = CGPoint(x: (pos.x - feetX).rounded(), y: (pos.y - floorInset * growth + lift).rounded())
+        if growth > 1.01, let screen = NSScreen.screens.first(where: { $0.frame.contains(pos) }) {
+            // 크게 부풀었을 때 화면 위로 넘치지 않게 아래로 내린다.
+            origin.y = min(origin.y, screen.visibleFrame.maxY - size.height)
+        }
         if panel.frame.origin != origin { panel.setFrameOrigin(origin) }
     }
 
