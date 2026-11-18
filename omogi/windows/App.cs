@@ -69,7 +69,7 @@ namespace Omogi
             Toggles.Add(new Toggle
             {
                 Title = "O/X — AI 답변을 기다리는 동안", MenuTitle = "O/X — AI 답변을 기다리는 동안 문제 띄우기",
-                Note = "Claude·ChatGPT 앱에서 Enter 누르고 기다릴 때 뜹니다. Enter 키를 눌렀는지만 봅니다.",
+                Note = "Claude·ChatGPT 앱에서 Enter 누르고 기다릴 때 뜹니다.",
                 Get = () => Settings.QuizEnterOn,
                 Flip = () =>
                 {
@@ -81,7 +81,7 @@ namespace Omogi
             Toggles.Add(new Toggle
             {
                 Title = "O/X — 가끔 물어 오기", MenuTitle = "O/X — 가끔 오모기가 문제 물어 오기",
-                Note = "컴퓨터를 쓰는 동안 오모기가 가끔 문제를 물고 옵니다. 누르면 펼쳐져요.",
+                Note = "오모기가 가끔 문제를 물고 옵니다. 누르면 펼쳐져요.",
                 Get = () => Settings.QuizBringOn, Flip = () => Settings.QuizBringOn = !Settings.QuizBringOn,
             });
 
