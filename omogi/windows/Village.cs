@@ -4,7 +4,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -125,7 +127,9 @@ namespace Omogi
         readonly Pet pet;
         WinTimer timer;
         string lastPushed = "";
-        DateTime lastPushAt = DateTime.MinValue, lastPokeCheck = DateTime.MinValue;
+        DateTime lastPushAt = DateTime.MinValue, lastPokeCheck = DateTime.MinValue, lastRefresh = DateTime.MinValue;
+        static readonly Random rng = new Random();
+        DateTime nextPlayAt = DateTime.UtcNow.AddSeconds(180 + rng.NextDouble() * 300);
         List<Villager> villagers = new List<Villager>();
 
         public IList<Villager> Villagers { get { return villagers; } }
@@ -138,6 +142,23 @@ namespace Omogi
         {
             get { return Settings.Get("villageShareCorrect", true); }
             set { Settings.Set("villageShareCorrect", value); }
+        }
+
+        /// 접속해 있는 친구의 새가 가끔 내 화면에 놀러 올지
+        public static bool PlayVisits
+        {
+            get { return Settings.Get("villagePlayVisits", true); }
+            set { Settings.Set("villagePlayVisits", value); }
+        }
+
+        /// 이름 뒤에 붙는 조사 (받침이 있으면 a, 없으면 b). 한글이 아니면 b.
+        public static string Josa(string name, string a, string b)
+        {
+            name = name ?? "";
+            if (name.Length == 0) return name + b;
+            int u = name[name.Length - 1];
+            if (u < 0xAC00 || u > 0xD7A3) return name + b;
+            return name + ((u - 0xAC00) % 28 == 0 ? b : a);
         }
 
         public bool Online { get { return letters.Online && server != null && !Unsupported; } }
@@ -168,8 +189,31 @@ namespace Omogi
             {
                 Push();
                 if (Online && (DateTime.UtcNow - lastPokeCheck).TotalSeconds >= 60) FetchPokes();
+                // 창을 열지 않아도 10분에 한 번은 친구 소식을 받아 둔다 (놀러 올 친구를 고르려고).
+                if (Online && PlayVisits && (DateTime.UtcNow - lastRefresh).TotalSeconds >= 600) Refresh();
+                if (Online && PlayVisits && DateTime.UtcNow >= nextPlayAt) PlayVisit();
             }
             catch (Exception e) { Log.Write("마을: 오류 " + e.GetType().Name); }
+        }
+
+        /// 지금 접속해 있는 친구 (공부 중이거나, 15분 안에 소식을 올린 친구)
+        public static bool Around(Villager v) { return v.Studying || (v.SeenSecs ?? int.MaxValue) < 900; }
+
+        /// 접속해 있는 친구 가운데 하나가 놀러 와서 30초쯤 뛰어놀다 간다. 25~50분에 한 번.
+        public bool PlayVisit(bool now = false)
+        {
+            List<Villager> around = villagers.Where(Around).ToList();
+            if (around.Count == 0 || pet.VisitorCount != 0)
+            {
+                if (!now) nextPlayAt = DateTime.UtcNow.AddSeconds(120);
+                return false;
+            }
+            Villager v = around[rng.Next(around.Count)];
+            nextPlayAt = DateTime.UtcNow.AddSeconds(1500 + rng.NextDouble() * 1500);
+            string text = v.Studying && Study.Studying ? v.Name + "도 공부 중이에요" : Josa(v.Name, "이", "가") + " 놀러 왔어요";
+            pet.Visit(Wardrobe.RowsForNames(v.Wear), text, true);
+            Log.Write("마을: 친구 새가 놀러 옴");
+            return true;
         }
 
         // 서버에 그 함수가 없다 (HTTP 404)
@@ -238,6 +282,7 @@ namespace Omogi
                 if (done != null) done();
                 return;
             }
+            lastRefresh = DateTime.UtcNow;
             server.Call("omogi_village", null, r =>
             {
                 if (r.Ok)
@@ -263,7 +308,7 @@ namespace Omogi
             server.Call("omogi_poke", new Dictionary<string, object> { { "p_to", v.Id } }, r =>
             {
                 if (r.Ok) done(v.Name + "에게 날아갔어요");
-                else if (r.Error.Code.Contains("daily_limit")) done("오늘은 " + v.Name + "를 충분히 찔렀어요");
+                else if (r.Error.Code.Contains("daily_limit")) done("오늘은 " + Josa(v.Name, "을", "를") + " 충분히 찔렀어요");
                 else
                 {
                     if (Missing(r.Error)) Unsupported = true;
@@ -292,7 +337,7 @@ namespace Omogi
                     if (name == null || !seen.Add(from ?? name)) continue;
                     int n = list.Count(x => LetterFiles.Text(x, "from") == from);
                     pet.Visit(Wardrobe.RowsForNames(LetterFiles.Text(j, "wear") ?? ""),
-                        n > 1 ? name + "가 콕콕 " + n + "번 찔렀어요" : name + "가 콕 찔렀어요");
+                        n > 1 ? Josa(name, "이", "가") + " 콕콕 " + n + "번 찔렀어요" : Josa(name, "이", "가") + " 콕 찔렀어요");
                 }
                 if (list.Count > 0) Log.Write("마을: 콕 " + list.Count + "번 받음");
             });
@@ -306,7 +351,7 @@ namespace Omogi
             {
                 var same = villagers.Where(v => v.Name == name).ToList();
                 if (same.Count != 1) return;
-                pet.Visit(Wardrobe.RowsForNames(same[0].Wear), name + "가 편지를 보냈어요");
+                pet.Visit(Wardrobe.RowsForNames(same[0].Wear), Josa(name, "이", "가") + " 편지를 보냈어요");
             });
         }
 
@@ -322,7 +367,9 @@ namespace Omogi
         readonly WinTimer timer = new WinTimer { Interval = 30000 };
         string flash = "";
         int shownRows = -1;
-        const int W = 460, RowH = 62;
+        const int W = 460, RowH = 62, YardH = 108;
+        readonly YardControl yard;
+        readonly WinTimer anim = new WinTimer { Interval = 100 };      // 마당의 새들 (창이 보일 때만 돈다)
 
         public VillageForm(Village village, Pet pet)
         {
@@ -341,7 +388,16 @@ namespace Omogi
             Study.Changed += OnChanged;
             Wardrobe.Changed += OnChanged;
             timer.Tick += (s, e) => { if (Visible) village.Refresh(); };
+            yard = new YardControl(pet);
+            Controls.Add(yard);
+            anim.Tick += (s, e) => { if (Visible) yard.Step(); else anim.Stop(); };
             Render();
+        }
+
+        protected override void OnVisibleChanged(EventArgs e)
+        {
+            base.OnVisibleChanged(e);
+            if (Visible && !IsDisposed) anim.Start(); else anim.Stop();
         }
 
         void OnChanged() { if (!IsDisposed && Visible) Render(); }
@@ -386,8 +442,9 @@ namespace Omogi
 
         public void Render()
         {
-            int rows = Math.Max(1, Math.Min(8, village.Villagers.Count));
-            int H = 150 + RowH * rows + 46;
+            int rows = Math.Max(1, Math.Min(7, village.Villagers.Count));
+            int top = YardH + 20;                       // 마당 아래에서 시작한다
+            int H = top + 150 + RowH * rows + 46;
             SuspendLayout();
             Point scroll = AutoScrollPosition;          // 스크롤된 채로 다시 그리면 자리가 어긋난다
             if (AutoScroll) AutoScrollPosition = Point.Empty;
@@ -402,6 +459,7 @@ namespace Omogi
             }
             foreach (Control c in Controls.Cast<Control>().ToList())
             {
+                if (c == yard) continue;
                 Controls.Remove(c);
                 var p = c as PictureBox;
                 if (p != null && p.Image != null) p.Image.Dispose();
@@ -409,30 +467,48 @@ namespace Omogi
             }
             Color ink = Color.FromArgb(28, 28, 30);
 
+            // 마당: 나와 친구들의 새가 모여 있다.
+            yard.Bounds = Dpi.R(20, 12, W - 40, YardH);
+            var birds = new List<YardBird>
+            {
+                new YardBird { Id = "me", Name = "나", Wear = Wardrobe.WornNames, Rows = Wardrobe.WornRows, State = Study.Studying ? YardState.Read : YardState.Play },
+            };
+            foreach (Villager v in village.Villagers.Take(7))
+            {
+                YardState state = v.Studying ? YardState.Read : Village.Around(v) ? YardState.Play
+                    : (v.SeenSecs ?? int.MaxValue) < 6 * 3600 ? YardState.Rest : YardState.Sleep;
+                birds.Add(new YardBird { Id = "v:" + v.Id, Name = v.Name, Wear = v.Wear ?? "", Rows = Wardrobe.RowsForNames(v.Wear ?? ""), State = state });
+            }
+            yard.Set(birds);
+
             // 나
-            Controls.Add(Picture(Wardrobe.WornRows, Dpi.R(20, 20, 144, 112), 4));
-            Controls.Add(Text_("나", Dpi.R(180, 26, 200, 26), 12.5f, FontStyle.Bold, ink));
+            Controls.Add(Picture(Wardrobe.WornRows, Dpi.R(20, top + 20, 144, 112), 4));
+            Controls.Add(Text_("나", Dpi.R(180, top + 26, 200, 26), 12.5f, FontStyle.Bold, ink));
             string mine = "오늘 " + Wardrobe.CorrectToday + "문제";
             if (Study.SecondsToday >= 60) mine += "  ·  공부 " + Study.Clock(Study.SecondsToday);
             if (Study.Studying) mine = "공부 중  ·  " + mine;
-            Controls.Add(Text_(mine, Dpi.R(181, 56, 260, 18), 9f, FontStyle.Regular, Color.Gray));
-            var study = new Button { Text = Study.Studying ? "공부 끝" : "공부 시작", Bounds = Dpi.R(178, 80, 110, 30), FlatStyle = FlatStyle.System };
+            Controls.Add(Text_(mine, Dpi.R(181, top + 56, 260, 18), 9f, FontStyle.Regular, Color.Gray));
+            var study = new Button { Text = Study.Studying ? "공부 끝" : "공부 시작", Bounds = Dpi.R(178, top + 80, 110, 30), FlatStyle = FlatStyle.System };
             study.Click += (s, e) => { if (Study.Studying) Study.Stop(); else Study.Start(); };
             Controls.Add(study);
             var share = new CheckBox
             {
-                Text = "오늘 맞힌 수 보이기", Bounds = Dpi.R(298, 85, 146, 20), Font = new Font("Malgun Gothic", 8.25f),
+                Text = "오늘 맞힌 수 보이기", Bounds = Dpi.R(298, top + 85, 146, 20), Font = new Font("Malgun Gothic", 8.25f),
                 ForeColor = ink, Checked = Village.ShareCorrect,
             };
             share.CheckedChanged += (s, e) => { Village.ShareCorrect = share.Checked; village.Push(true); };
             Controls.Add(share);
-            var hint = Text_("공부 중엔 책을 봐요. 5분 손을 놓으면 저절로 멈춥니다.", Dpi.R(181, 113, 262, 30), 8f, FontStyle.Regular, Color.DarkGray);
-            hint.AutoEllipsis = false;
-            Controls.Add(hint);
-            Controls.Add(new Label { Bounds = Dpi.R(20, 146, W - 40, 1), BackColor = Color.FromArgb(225, 225, 225) });
+            var visits = new CheckBox
+            {
+                Text = "친구 새가 가끔 놀러 오기", Bounds = Dpi.R(181, top + 115, 220, 20), Font = new Font("Malgun Gothic", 8.25f),
+                ForeColor = ink, Checked = Village.PlayVisits,
+            };
+            visits.CheckedChanged += (s, e) => { Village.PlayVisits = visits.Checked; };
+            Controls.Add(visits);
+            Controls.Add(new Label { Bounds = Dpi.R(20, top + 146, W - 40, 1), BackColor = Color.FromArgb(225, 225, 225) });
 
             // 친구들
-            int y = 150;
+            int y = top + 150;
             if (village.Villagers.Count == 0)
             {
                 string msg = string.IsNullOrEmpty(village.Note) ? "아직 친구가 없어요. 설정 창의 \"친구…\"에서 친구를 맺으면 여기에 모여요." : village.Note;
@@ -440,7 +516,7 @@ namespace Omogi
                 l.AutoEllipsis = false;
                 Controls.Add(l);
             }
-            foreach (Villager villager in village.Villagers.Take(8))
+            foreach (Villager villager in village.Villagers.Take(7))
             {
                 Villager v = villager;
                 Controls.Add(Picture(Wardrobe.RowsForNames(v.Wear), Dpi.R(20, y + 3, 72, 56), 2));
@@ -481,6 +557,7 @@ namespace Omogi
         {
             if (e.CloseReason == CloseReason.UserClosing) { e.Cancel = true; timer.Stop(); Hide(); return; }
             timer.Stop();
+            anim.Stop();
             village.Changed -= OnChanged;
             Study.Changed -= OnChanged;
             Wardrobe.Changed -= OnChanged;
@@ -497,6 +574,190 @@ namespace Omogi
                 DrawToBitmap(bmp, new Rectangle(0, 0, Width, Height));
                 bmp.Save(path, System.Drawing.Imaging.ImageFormat.Png);
             }
+        }
+    }
+
+    /// Play: 접속 중이라 뛰어다닌다. Read: 공부 중. Rest: 얼마 전에 다녀가 앉아 있다. Sleep: 한참 안 와서 잔다.
+    enum YardState { Play, Read, Rest, Sleep }
+
+    sealed class YardBird
+    {
+        public string Id, Name, Wear = "";
+        public int[] Rows;
+        public YardState State;
+        public YardSprites Sprites;
+        public float X;                              // 96dpi 기준 좌표 (그릴 때 배율을 곱한다)
+        public float? Target;
+        public double RestUntil;
+        public bool Right = true;
+    }
+
+    /// 마을 마당: 풀밭 위에 나와 친구들의 새가 모여 있다. 접속 중인 새는 뛰어다니고, 공부 중인 새는 책을 본다.
+    sealed class YardControl : Control
+    {
+        readonly Pet pet;
+        List<YardBird> birds = new List<YardBird>();
+        double last;
+        static readonly Stopwatch clock = Stopwatch.StartNew();
+        static readonly Random rng = new Random();
+        readonly Font nameFont = new Font("Malgun Gothic", 7.5f);
+        const float Lo = 40;
+
+        static double Now { get { return clock.Elapsed.TotalSeconds; } }
+        float Hi { get { return Math.Max(Lo + 1, Width / Dpi.K - 40); } }
+
+        public YardControl(Pet pet)
+        {
+            this.pet = pet;
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            SetStyle(ControlStyles.Selectable, false);
+            TabStop = false;
+            BackColor = Color.White;
+        }
+
+        /// 새 목록을 바꾼다. 이미 있던 새는 자리를 그대로 두고, 옷이 같으면 그림도 그대로 쓴다.
+        public void Set(List<YardBird> list)
+        {
+            float hi = Hi;
+            var next = new List<YardBird>();
+            for (int i = 0; i < list.Count; i++)
+            {
+                YardBird b = list[i];
+                YardBird old = birds.FirstOrDefault(o => o.Id == b.Id);
+                if (old != null)
+                {
+                    b.X = Math.Min(hi, Math.Max(Lo, old.X));
+                    b.Target = old.Target;
+                    b.RestUntil = old.RestUntil;
+                    b.Right = old.Right;
+                    if (old.Sprites != null && old.Wear == b.Wear) { b.Sprites = old.Sprites; old.Sprites = null; }
+                }
+                else
+                {
+                    b.X = Lo + (hi - Lo) * (i + 0.5f) / Math.Max(1, list.Count);
+                    b.Right = i % 2 == 0;
+                    b.RestUntil = Now + 0.5 + rng.NextDouble() * 3.5;
+                }
+                if (b.Sprites == null) b.Sprites = pet.MakeYardSprites(b.Rows);
+                if (b.State != YardState.Play) b.Target = null;
+                next.Add(b);
+            }
+            foreach (YardBird o in birds) if (o.Sprites != null) { o.Sprites.Dispose(); o.Sprites = null; }
+            birds = next;
+            Invalidate();
+        }
+
+        public void Step()
+        {
+            double now = Now;
+            float dt = (float)Math.Min(0.3, Math.Max(0, now - last));
+            last = now;
+            float hi = Hi;
+            foreach (YardBird b in birds)
+            {
+                if (b.State != YardState.Play) continue;
+                if (b.Target != null)
+                {
+                    float step = dt * 46, dx = b.Target.Value - b.X;
+                    b.Right = dx > 0;
+                    if (Math.Abs(dx) <= step) { b.X = b.Target.Value; b.Target = null; b.RestUntil = now + 1.5 + rng.NextDouble() * 4.5; }
+                    else b.X += dx > 0 ? step : -step;
+                }
+                else if (now >= b.RestUntil && !Native.ReduceMotion()) b.Target = Lo + (float)rng.NextDouble() * (hi - Lo);
+            }
+            Invalidate();
+        }
+
+        static GraphicsPath Rounded(RectangleF r, float radius)
+        {
+            float d = radius * 2;
+            var p = new GraphicsPath();
+            p.AddArc(r.Left, r.Top, d, d, 180, 90);
+            p.AddArc(r.Right - d, r.Top, d, d, 270, 90);
+            p.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+            p.AddArc(r.Left, r.Bottom - d, d, d, 90, 90);
+            p.CloseFigure();
+            return p;
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            float k = Dpi.K;
+            int w = Width, h = Height;
+            g.Clear(BackColor);
+            using (GraphicsPath box = Rounded(new RectangleF(0, 0, w, h), 10 * k))
+            using (var sky = new SolidBrush(Color.FromArgb(222, 240, 250)))
+            using (var grass = new SolidBrush(Color.FromArgb(168, 214, 143)))
+            using (var tuft = new SolidBrush(Color.FromArgb(143, 196, 120)))
+            {
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.FillPath(sky, box);
+                g.SmoothingMode = SmoothingMode.None;
+                GraphicsState saved = g.Save();
+                g.SetClip(box, CombineMode.Intersect);
+                g.FillRectangle(grass, 0, h - 30 * k, w, 30 * k);
+                for (float gx = 6; gx * k < w; gx += 26)
+                {
+                    g.FillRectangle(tuft, gx * k, h - 32 * k, 4 * k, 2 * k);
+                    g.FillRectangle(tuft, (gx + 9) * k, h - 16 * k, 4 * k, 2 * k);
+                }
+                g.Restore(saved);
+            }
+
+            double now = Now;
+            int scale = Dpi.S(2);                       // 스프라이트 1픽셀 = 화면 몇 픽셀
+            using (var ink = new SolidBrush(Color.FromArgb(217, 26, 26, 26)))
+            using (var format = new StringFormat(StringFormatFlags.NoWrap) { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter })
+            using (var attr = new System.Drawing.Imaging.ImageAttributes())
+            {
+                attr.SetWrapMode(WrapMode.TileFlipXY);   // 가장자리 픽셀이 옅어지지 않게
+                foreach (YardBird b in birds)
+                {
+                    YardSprites sp = b.Sprites;
+                    if (sp != null)
+                    {
+                        Bitmap image = sp.Sit;
+                        float lift = 0;
+                        switch (b.State)
+                        {
+                            case YardState.Read: image = sp.Read[now % 6.5 < 0.35 ? 1 : 0]; break;
+                            case YardState.Sleep: image = sp.Sleep[(int)(now * 0.8) % 2]; break;
+                            case YardState.Rest: image = now % 4.3 < 0.18 ? sp.Blink : sp.Sit; break;
+                            default:
+                                if (b.Target != null)
+                                {
+                                    double ph = (now * 3) % 1;
+                                    image = sp.Hop[Math.Min(sp.Hop.Length - 1, (int)(ph * sp.Hop.Length))];
+                                    lift = (float)Math.Sin(ph * Math.PI) * 7;
+                                }
+                                else if (now % 3.7 < 0.18) image = sp.Blink;
+                                break;
+                        }
+                        int bw = sp.W * scale, bh = sp.H * scale;
+                        int bx = (int)Math.Round(b.X * k - bw / 2f), by = (int)Math.Round(h - (18 + lift) * k) - bh;
+                        Point[] dest = b.Right ? new[] { new Point(bx, by), new Point(bx + bw, by), new Point(bx, by + bh) }
+                                               : new[] { new Point(bx + bw, by), new Point(bx, by), new Point(bx + bw, by + bh) };
+                        g.InterpolationMode = InterpolationMode.NearestNeighbor;
+                        g.PixelOffsetMode = PixelOffsetMode.Half;
+                        g.DrawImage(image, dest, new Rectangle(0, 0, sp.W, sp.H), GraphicsUnit.Pixel, attr);
+                        g.PixelOffsetMode = PixelOffsetMode.Default;
+                    }
+                    g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+                    g.DrawString(b.Name ?? "", nameFont, ink, new RectangleF((b.X - 40) * k, h - 18 * k, 80 * k, 16 * k), format);
+                }
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                foreach (YardBird b in birds) if (b.Sprites != null) { b.Sprites.Dispose(); b.Sprites = null; }
+                birds.Clear();
+                nameFont.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 }

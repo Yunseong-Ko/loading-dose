@@ -784,6 +784,30 @@ namespace Omogi
                 });
                 after(2500, () => { note("손님: " + app.Pet.DebugState); shot("desk-11-visitor.png"); });
                 after(5500, () => check("손님이 돌아감 (" + app.Pet.VisitorCount + ")", app.Pet.VisitorCount == 0));
+                // 놀러 오기: 접속해 있는 친구(지우)의 새가 와서 인사한 뒤 바닥을 뛰어다닌다.
+                after(300, () =>
+                {
+                    check("조사: 지우가 / 서연이 / 민재를", Village.Josa("지우", "이", "가") == "지우가" && Village.Josa("서연", "이", "가") == "서연이"
+                        && Village.Josa("민재", "을", "를") == "민재를" && Village.Josa("Kim", "이", "가") == "Kim가");
+                    app.Village.DebugSet(new List<Villager>
+                    {
+                        new Villager { Id = "a", Name = "지우", Handle = "jiwoo", Wear = "scarf,glasses,straw", Day = Wardrobe.TodayKey, Correct = 42, StudySecs = 4500, Studying = true, SeenSecs = 30 },
+                        new Villager { Id = "b", Name = "서연", Wear = "badge5,crown", Day = Wardrobe.TodayKey, StudySecs = 0, Studying = false, SeenSecs = 7200 },
+                        new Villager { Id = "c", Name = "민재", Handle = "mj", Wear = "", Day = "2000-01-01", Correct = 5, StudySecs = 600, Studying = false, SeenSecs = 200000 },
+                    });
+                    bool came = app.Village.PlayVisit(true);
+                    check("접속 중인 친구만 놀러 옴 (손님 " + app.Pet.VisitorCount + ")", came && app.Pet.VisitorCount == 1);
+                    check("손님이 있으면 또 오지 않음", !app.Village.PlayVisit(true) && app.Pet.VisitorCount == 1);
+                });
+                after(6000, () =>
+                {
+                    note("놀러 온 손님: " + app.Pet.DebugState);
+                    check("놀다 가는 손님은 인사 뒤에도 남아 있음 (" + app.Pet.VisitorCount + ")", app.Pet.VisitorCount == 1);
+                    shot("desk-13-play.png");
+                    app.Pet.TestClearVisitors();
+                    app.Village.DebugSet(new List<Villager>());
+                    check("손님을 돌려보냄 (" + app.Pet.VisitorCount + ")", app.Pet.VisitorCount == 0);
+                });
                 after(300, () =>
                 {
                     try { LetterSelfTest.Run(check); }

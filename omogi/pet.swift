@@ -35,21 +35,40 @@ final class PetView: NSView {
     }
 }
 
+struct YardSprites {
+    let sit: CGImage, blink: CGImage, hop: [CGImage], read: [CGImage], sleep: [CGImage]
+    let size: CGSize
+}
+
 /// 놀러 온 친구의 새: 화면 밖에서 날아와 내 오모기 옆에 앉아 말풍선을 띄우고, 잠깐 좋아하다가 날아간다.
 fileprivate final class Visitor {
     private let panel: NSPanel
     private let layer = CALayer()
     private let note: NSPanel
-    private let fly: [CGImage], happy: [CGImage]
+    private let fly: [CGImage], happy: [CGImage], hop: [CGImage]
+    private let sit: CGImage
     private let from: CGPoint, land: CGPoint
+    /// 놀다 가는 손님: 인사한 뒤 바닥을 이리저리 뛰어다니다가 돌아간다.
+    private let play: Bool
+    private let range: ClosedRange<CGFloat>
+    private var cur: CGPoint
+    private var target: CGFloat?
+    private var restUntil = 0.0, last = 0.0
+    private var facing = true
     private let born = CACurrentMediaTime()
     private let stay: Double
     private let size = CGSize(width: 108, height: 84)
     private let faceRight: Bool
 
-    init(fly: [CGImage], happy: [CGImage], from: CGPoint, land: CGPoint, text: String, stay: Double) {
+    init(fly: [CGImage], happy: [CGImage], hop: [CGImage], sit: CGImage, from: CGPoint, land: CGPoint, text: String,
+         stay: Double, play: Bool, range: ClosedRange<CGFloat>) {
         self.fly = fly
         self.happy = happy
+        self.hop = hop
+        self.sit = sit
+        self.play = play
+        self.range = range
+        cur = land
         self.from = from
         self.land = land
         self.stay = stay
@@ -114,6 +133,19 @@ fileprivate final class Visitor {
             let k = CGFloat(t / arrive), e = 1 - (1 - k) * (1 - k)
             let p = CGPoint(x: from.x + (land.x - from.x) * e, y: from.y + (land.y - from.y) * e + sin(k * .pi) * 30)
             place(fly[Int(t * 14) % fly.count], at: p, right: faceRight)
+        } else if play, t < arrive + stay, t - arrive > 4 {
+            if note.isVisible { note.orderOut(nil) }
+            let dt = CGFloat(min(0.2, max(0, now - last)))
+            if let tx = target {
+                let step = dt * 70, dx = tx - cur.x
+                facing = dx > 0
+                if abs(dx) <= step { cur.x = tx; target = nil; restUntil = now + Double.random(in: 1.2...3.5) } else { cur.x += dx > 0 ? step : -step }
+                let ph = (now * 3).truncatingRemainder(dividingBy: 1)
+                place(hop[min(hop.count - 1, Int(ph * Double(hop.count)))], at: CGPoint(x: cur.x, y: land.y + CGFloat(sin(ph * .pi)) * 10), right: facing)
+            } else {
+                place(sit, at: cur, right: facing)
+                if now >= restUntil, !reduceMotion() { target = CGFloat.random(in: range) }
+            }
         } else if t < arrive + stay {
             let u = t - arrive
             let hop = abs(sin(u * 6)) * 8
@@ -127,12 +159,13 @@ fileprivate final class Visitor {
         } else if t < arrive + stay + leave {
             if note.isVisible { note.orderOut(nil) }
             let k = CGFloat((t - arrive - stay) / leave), e = k * k
-            let p = CGPoint(x: land.x + (from.x - land.x) * e, y: land.y + (from.y - land.y) * e + sin(k * .pi) * 30)
+            let p = CGPoint(x: cur.x + (from.x - cur.x) * e, y: land.y + (from.y - land.y) * e + sin(k * .pi) * 30)
             place(fly[Int(t * 14) % fly.count], at: p, right: !faceRight)
         } else {
             remove()
             return false
         }
+        last = now
         return true
     }
 
@@ -581,7 +614,7 @@ final class Pet: NSObject {
     }
 
     /// 친구의 새가 놀러 온다: 그 친구가 입은 옷 그대로 날아와 옆에 앉고, 말풍선을 띄웠다가 돌아간다.
-    func visit(wear rows: [Int], text: String) {
+    func visit(wear rows: [Int], text: String, play: Bool = false) {
         guard shown, !bareFrames.isEmpty, visitors.count < 3 else { return }      // 오모기를 숨겨 두었으면 손님도 오지 않는다
         let screen = currentScreen()
         let vf = screen.visibleFrame
@@ -592,11 +625,23 @@ final class Pet: NSObject {
         let from = CGPoint(x: side < 0 ? vf.minX - 80 : vf.maxX + 80, y: vf.minY + vf.height * 0.55)
         let valid = rows.filter { $0 >= 0 && $0 < wearRows.count }
         func img(_ f: Frame) -> CGImage { return dressed(f.rawValue, valid) }
+        let lo = max(vf.minX + 60, land.x - 200), hi = max(lo, min(vf.maxX - 60, land.x + 200))
         visitors.append(Visitor(fly: [img(.fly0), img(.fly1), img(.fly2), img(.fly1)], happy: [img(.happy0), img(.happy1)],
-                                from: from, land: land, text: text, stay: reduceMotion() ? 5 : 4))
+                                hop: [img(.hop0), img(.hop1), img(.hop2)], sit: img(.sit0),
+                                from: from, land: land, text: text,
+                                stay: play ? Double.random(in: 28...40) : (reduceMotion() ? 5 : 4), play: play, range: lo...hi))
         retime()
     }
     var visitorCount: Int { return visitors.count }
+
+    /// 마을 마당에 그릴 그림들 (주어진 옷을 입힌 채로)
+    func yardSprites(wear rows: [Int]) -> YardSprites? {
+        guard !bareFrames.isEmpty else { return nil }
+        let valid = rows.filter { $0 >= 0 && $0 < wearRows.count }
+        func img(_ f: Frame) -> CGImage { return dressed(f.rawValue, valid) }
+        return YardSprites(sit: img(.sit0), blink: img(.blink), hop: [img(.hop0), img(.hop1), img(.hop2)],
+                           read: [img(.read0), img(.read1)], sleep: [img(.sleep0), img(.sleep1)], size: framePx)
+    }
 
     /// 짧은 말풍선 (꼬마 뱁새를 얻었을 때 등)
     func cheer(_ text: String) {

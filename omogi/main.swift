@@ -192,6 +192,10 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 Villager(id: "a", name: "지우", handle: "jiwoo", wear: "scarf,glasses,straw", day: Wardrobe.today(), correct: 42, studySecs: 4500, studying: true, seenSecs: 30),
                 Villager(id: "b", name: "서연", handle: nil, wear: "badge5,crown", day: Wardrobe.today(), correct: nil, studySecs: 0, studying: false, seenSecs: 7200),
                 Villager(id: "c", name: "민재", handle: "mj", wear: "", day: "2000-01-01", correct: 5, studySecs: 600, studying: false, seenSecs: 200000)])
+            check("조사: 지우가 / 서연이 / 민재를", josa("지우", "이", "가") == "지우가" && josa("서연", "이", "가") == "서연이" && josa("민재", "을", "를") == "민재를" && josa("Kim", "이", "가") == "Kim가")
+            pet.start()
+            let came = village.playVisit(now: true)
+            check("접속 중인 친구가 놀러 옴 (\(came), 손님 \(pet.visitorCount))", came && pet.visitorCount == 1)
             pet.snapshotPoses(to: dir.appendingPathComponent("wardrobe-poses.png"))
             wardrobeWindow.show()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {

@@ -283,10 +283,33 @@ namespace Omogi
         readonly Rectangle area;
         Bitmap shown;
         const double Arrive = 1.3, Leave = 1.3;
+        static readonly Random rng = new Random();
+
+        // 놀다 가는 손님: 인사한 뒤 바닥을 이리저리 뛰어다니다가 돌아간다.
+        readonly bool play;
+        readonly Bitmap[] hopRight, hopLeft;         // play 일 때만 있다
+        readonly Bitmap sitRight, sitLeft;
+        readonly float lo, hi;                       // 뛰어다니는 범위 (발바닥 x)
+        float curX;
+        float? target;
+        double restUntil, last;
+        bool facing;                                 // 오른쪽을 보는지
 
         public Visitor(Bitmap[] flyIn, Bitmap[] flyOut, Bitmap[] happy, PointF feet, PointF from, PointF land, string text,
-                       double stay, double now, float unit, Rectangle area)
+                       double stay, double now, float unit, Rectangle area,
+                       bool play = false, Bitmap[] hopRight = null, Bitmap[] hopLeft = null, Bitmap sitRight = null, Bitmap sitLeft = null,
+                       float lo = 0, float hi = 0)
         {
+            this.play = play && hopRight != null && hopLeft != null && sitRight != null && sitLeft != null;
+            this.hopRight = hopRight;
+            this.hopLeft = hopLeft;
+            this.sitRight = sitRight;
+            this.sitLeft = sitLeft;
+            this.lo = lo;
+            this.hi = Math.Max(lo, hi);
+            curX = land.X;
+            facing = from.X >= land.X;                // 처음에는 인사하던 쪽(날아온 쪽의 반대)을 본다
+            last = now;
             this.flyIn = flyIn;
             this.flyOut = flyOut;
             this.happy = happy;
@@ -320,6 +343,26 @@ namespace Omogi
                 Place(flyIn[(int)(t * 14) % flyIn.Length],
                     new PointF(from.X + (land.X - from.X) * e, from.Y + (land.Y - from.Y) * e - (float)Math.Sin(k * Math.PI) * 30 * unit));
             }
+            else if (play && t < Arrive + stay && t - Arrive > 4)
+            {
+                if (note.Visible) note.Hide();
+                float dt = (float)Math.Min(0.2, Math.Max(0, now - last));
+                if (target != null)
+                {
+                    float step = dt * 70 * unit, dx = target.Value - curX;
+                    facing = dx > 0;
+                    if (Math.Abs(dx) <= step) { curX = target.Value; target = null; restUntil = now + 1.2 + rng.NextDouble() * 2.3; }
+                    else curX += dx > 0 ? step : -step;
+                    double ph = (now * 3) % 1;
+                    Bitmap[] hop = facing ? hopRight : hopLeft;
+                    Place(hop[Math.Min(hop.Length - 1, (int)(ph * hop.Length))], new PointF(curX, land.Y - (float)Math.Sin(ph * Math.PI) * 10 * unit));
+                }
+                else
+                {
+                    Place(facing ? sitRight : sitLeft, new PointF(curX, land.Y));
+                    if (now >= restUntil && !Native.ReduceMotion()) target = lo + (float)rng.NextDouble() * (hi - lo);
+                }
+            }
             else if (t < Arrive + stay)
             {
                 double u = t - Arrive;
@@ -337,13 +380,14 @@ namespace Omogi
                 if (note.Visible) note.Hide();
                 float k = (float)((t - Arrive - stay) / Leave), e = k * k;
                 Place(flyOut[(int)(t * 14) % flyOut.Length],
-                    new PointF(land.X + (from.X - land.X) * e, land.Y + (from.Y - land.Y) * e - (float)Math.Sin(k * Math.PI) * 30 * unit));
+                    new PointF(curX + (from.X - curX) * e, land.Y + (from.Y - land.Y) * e - (float)Math.Sin(k * Math.PI) * 30 * unit));
             }
             else
             {
                 Remove();
                 return false;
             }
+            last = now;
             return true;
         }
 
@@ -351,7 +395,23 @@ namespace Omogi
         {
             try { note.Hide(); note.Dispose(); } catch { }
             try { win.Hide(); win.Dispose(); } catch { }
-            foreach (Bitmap b in flyIn.Concat(flyOut).Concat(happy).Distinct()) b.Dispose();
+            IEnumerable<Bitmap> all = flyIn.Concat(flyOut).Concat(happy);
+            if (hopRight != null) all = all.Concat(hopRight);
+            if (hopLeft != null) all = all.Concat(hopLeft);
+            foreach (Bitmap b in all.Concat(new[] { sitRight, sitLeft }).Where(x => x != null).Distinct().ToList()) b.Dispose();
+        }
+    }
+
+    /// 마을 마당에 그릴 그림들 (주어진 옷을 입힌 채로, 본래 크기 그대로 오른쪽 보기).
+    sealed class YardSprites : IDisposable
+    {
+        public Bitmap Sit, Blink;
+        public Bitmap[] Hop, Read, Sleep;
+        public int W, H;
+
+        public void Dispose()
+        {
+            foreach (Bitmap b in new[] { Sit, Blink }.Concat(Hop).Concat(Read).Concat(Sleep)) if (b != null) b.Dispose();
         }
     }
 
@@ -593,7 +653,8 @@ namespace Omogi
         }
 
         /// 친구의 새가 놀러 온다: 그 친구가 입은 옷 그대로 날아와 옆에 앉고, 말풍선을 띄웠다가 돌아간다.
-        public void Visit(int[] rows, string text)
+        /// play: 인사한 뒤 30초쯤 바닥을 뛰어다니다가 돌아간다.
+        public void Visit(int[] rows, string text, bool play = false)
         {
             if (!shown || bare.Count < (int)F.Count || visitors.Count >= 3) return;      // 오모기를 숨겨 두었으면 손님도 오지 않는다
             Screen screen = CurrentScreen();
@@ -614,9 +675,33 @@ namespace Omogi
                 Bitmap a = img(F.Fly0, r), b = img(F.Fly1, r), c = img(F.Fly2, r);
                 return new[] { a, b, c, b };
             };
-            visitors.Add(new Visitor(fly(right), fly(!right), new[] { img(F.Happy0, !right), img(F.Happy1, !right) },
-                new PointF(FeetPx * zoom, h - FloorInset * zoom), from, land, text ?? "", Native.ReduceMotion() ? 5 : 4, Now, U, wa));
+            var feet = new PointF(FeetPx * zoom, h - FloorInset * zoom);
+            if (play)
+            {
+                float lo = Math.Max(wa.Left + 60 * U, land.X - 200 * U), hi = Math.Max(lo, Math.Min(wa.Right - 60 * U, land.X + 200 * U));
+                Func<bool, Bitmap[]> hop = r => new[] { img(F.Hop0, r), img(F.Hop1, r), img(F.Hop2, r) };
+                visitors.Add(new Visitor(fly(right), fly(!right), new[] { img(F.Happy0, !right), img(F.Happy1, !right) },
+                    feet, from, land, text ?? "", Rand(28, 40), Now, U, wa,
+                    true, hop(true), hop(false), img(F.Sit0, true), img(F.Sit0, false), lo, hi));
+            }
+            else
+                visitors.Add(new Visitor(fly(right), fly(!right), new[] { img(F.Happy0, !right), img(F.Happy1, !right) },
+                    feet, from, land, text ?? "", Native.ReduceMotion() ? 5 : 4, Now, U, wa));
             Retime();
+        }
+
+        /// 마을 마당에 그릴 그림들 (주어진 옷을 입힌 채로). 그림을 아직 못 읽었으면 null. 쓰고 나면 Dispose 한다.
+        public YardSprites MakeYardSprites(int[] rows)
+        {
+            if (bare.Count < (int)F.Count) return null;
+            int[] valid = (rows ?? new int[0]).Where(r => r >= 0 && r < wearRows.Count).ToArray();
+            Func<F, Bitmap> img = f => Dressed((int)f, valid);
+            return new YardSprites
+            {
+                Sit = img(F.Sit0), Blink = img(F.Blink), Hop = new[] { img(F.Hop0), img(F.Hop1), img(F.Hop2) },
+                Read = new[] { img(F.Read0), img(F.Read1) }, Sleep = new[] { img(F.Sleep0), img(F.Sleep1) },
+                W = FrameW, H = FrameH,
+            };
         }
 
         /// 짧은 말풍선 (꼬마 뱁새를 얻었을 때 등)
@@ -1506,6 +1591,14 @@ namespace Omogi
         public float Growth { get { return growth; } }
         public int MiniCount { get { return minis.Count; } }
         /// 자체 점검용: 떠 있는 꼬마를 하나 잡은 것처럼 한다.
+        /// 자체 점검용: 와 있는 손님을 바로 돌려보낸다 (놀다 가는 손님은 30초 넘게 머문다).
+        public void TestClearVisitors()
+        {
+            foreach (Visitor v in visitors) v.Remove();
+            visitors.Clear();
+            Retime();
+        }
+
         public bool TestCatchMini()
         {
             if (minis.Count == 0 || OnMiniCaught == null) return false;
