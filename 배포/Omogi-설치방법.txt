@@ -1,4 +1,4 @@
-Omogi — 화면에 사는 작은 뱁새 (테스트 버전 0.2.0, Mac 전용)
+Omogi — 화면에 사는 작은 뱁새 (Mac 판, 테스트 버전 0.3.0)
 제작자: @hi20010205
 
 화면 아래에 흰오목눈이 "오모기"가 살면서 돌아다니고, 졸고, 둥지를 짓습니다.
@@ -25,7 +25,7 @@ Omogi — 화면에 사는 작은 뱁새 (테스트 버전 0.2.0, Mac 전용)
 macOS 12 이상에서 동작합니다.
 
 
-이미 깔아서 쓰던 분 (업데이트: 0.1.x → 0.2.0)
+이미 깔아서 쓰던 분 (업데이트: 예전 버전 → 0.3.0)
 
 1. 쓰던 Omogi 를 끕니다.
    - 설정 창이나 메뉴에서 "Omogi 종료". (오모기를 오른쪽 클릭해도 메뉴가 나옵니다.)
@@ -40,6 +40,7 @@ macOS 12 이상에서 동작합니다.
    일정 알림도 캘린더 접근을 다시 물으면 허용해 주세요.
 
  - 받은 편지, 보낸 편지, 켜 둔 설정은 그대로 남습니다.
+ - 0.2.0 에서 올라오는 분은 덮어쓰기만 하면 되고, 키체인 창도 뜨지 않습니다.
  - 4번의 키체인 창은 0.1.0, 0.1.1 에서 올라올 때만 한 번 뜹니다. 0.1.2 를 쓰던 분은 뜨지 않습니다.
  - 친구가 아직 예전 버전을 쓰고 있어도 편지는 서로 오갑니다.
 
@@ -57,6 +58,18 @@ O/X 문제 풀기  (기본은 꺼져 있습니다. 설정 창에서 켭니다)
  - 연속으로 맞히면 오모기가 점점 커집니다. 다섯 번 연속이면… 직접 해 보세요.
  - Loading Dose 를 같이 쓰고 있으면 "AI 답변을 기다리는 동안" 카드는 Loading Dose 쪽에서만 뜹니다.
  - 문항은 사람이 하나하나 검수한 것이 아닙니다. 틀린 곳이 보이면 알려 주세요.
+
+
+꼬마 뱁새와 옷장  (0.3.0 에서 새로 생겼습니다)
+
+ - O/X 문제를 맞히면 꼬마 뱁새가 1마리씩 모입니다. 틀려도 깎이지 않습니다.
+ - 다섯 번 연속으로 맞혀 오모기가 펑 터지면 꼬마들이 흩어집니다. 날아가기 전에 눌러서 잡으면 그만큼 더 모입니다.
+ - 하루에 60마리까지 모을 수 있습니다.
+ - 설정 창이나 메뉴의 "옷장…"에서 모은 꼬마 뱁새로 옷을 사서 입힙니다.
+   빨간 목도리, 밀짚모자, 동그란 안경, 수술모, 청진기, 학사모, 왕관이 있고, 머리·얼굴·목에 하나씩 입힐 수 있습니다.
+ - 메달은 살 수 없고, 한 과목에서 100문제를 맞히면 받습니다.
+ - Anki 빈칸 카드처럼 스스로 "알았음"을 누르는 카드는 세지 않습니다.
+ - 꼬마 뱁새와 옷은 내 컴퓨터에만 저장됩니다. 아직 친구에게는 보이지 않습니다.
 
 
 친구와 편지 주고받기
@@ -95,12 +108,12 @@ O/X 문제 풀기  (기본은 꺼져 있습니다. 설정 창에서 켭니다)
 
 [A] 업데이트 — 아이디, 친구, 편지, 설정은 그대로 둡니다.
 
-pkill -x Omogi; rm -rf /Applications/Omogi.app ~/Downloads/Omogi.app; curl -L -o /tmp/Omogi-Mac.zip https://github.com/Yunseong-Ko/loading-dose/releases/download/omogi-v0.2.0/Omogi-Mac.zip && ditto -x -k /tmp/Omogi-Mac.zip /Applications && xattr -dr com.apple.quarantine /Applications/Omogi.app; open /Applications/Omogi.app
+pkill -x Omogi; rm -rf /Applications/Omogi.app ~/Downloads/Omogi.app; curl -L -o /tmp/Omogi-Mac.zip https://github.com/Yunseong-Ko/loading-dose/releases/download/omogi-v0.3.0/Omogi-Mac.zip && ditto -x -k /tmp/Omogi-Mac.zip /Applications && xattr -dr com.apple.quarantine /Applications/Omogi.app; open /Applications/Omogi.app
 
 [B] 완전히 지우고 새로 — 아이디, 친구, 받은 편지, 설정이 모두 사라집니다.
     편지를 쓰고 있었다면 먼저 설정 창 → "친구…" → "서버에서 내 정보 지우기…"를 누르고 하세요.
 
-pkill -x Omogi; rm -rf /Applications/Omogi.app ~/Downloads/Omogi.app ~/Library/Application\ Support/Omogi; defaults delete com.omogi.mac 2>/dev/null; curl -L -o /tmp/Omogi-Mac.zip https://github.com/Yunseong-Ko/loading-dose/releases/download/omogi-v0.2.0/Omogi-Mac.zip && ditto -x -k /tmp/Omogi-Mac.zip /Applications && xattr -dr com.apple.quarantine /Applications/Omogi.app; open /Applications/Omogi.app
+pkill -x Omogi; rm -rf /Applications/Omogi.app ~/Downloads/Omogi.app ~/Library/Application\ Support/Omogi; defaults delete com.omogi.mac 2>/dev/null; curl -L -o /tmp/Omogi-Mac.zip https://github.com/Yunseong-Ko/loading-dose/releases/download/omogi-v0.3.0/Omogi-Mac.zip && ditto -x -k /tmp/Omogi-Mac.zip /Applications && xattr -dr com.apple.quarantine /Applications/Omogi.app; open /Applications/Omogi.app
 
  - 0.1.0, 0.1.1 에서 [A]로 올라오면 키체인 창이 한 번 뜹니다. Mac 암호를 넣고 "항상 허용"을 누르세요.
  - 집중 모드나 "AI 답변을 기다리는 동안"을 쓰고 있었다면 손쉬운 사용 권한을 지웠다가 다시 줘야 합니다 (위 5번).
@@ -143,4 +156,4 @@ pkill -x Omogi; rm -rf /Applications/Omogi.app ~/Downloads/Omogi.app ~/Library/A
 
  - 테스트 버전이라 서버가 잠시 멈추거나 편지가 초기화될 수 있습니다. 중요한 말은 여기에 쓰지 마세요.
  - Mac 을 바꾸거나 앱의 로그인 정보가 사라지면 친구를 다시 맺어야 합니다.
- - 아직 Windows 에서는 쓸 수 없습니다.
+ - Windows 판은 따로 있습니다 (Omogi-Windows.zip). Windows 를 쓰는 친구와도 편지를 주고받을 수 있습니다.
