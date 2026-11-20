@@ -16,7 +16,7 @@ namespace Omogi
 {
     static class AppInfo
     {
-        public const string Version = "0.1.0";
+        public const string Version = "0.1.1";
         public const string Credit = "제작자: @hi20010205";
     }
 

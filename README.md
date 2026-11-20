@@ -100,7 +100,7 @@ assets/                                          README용 아이콘과 시연 �
 - 편지 (만드는 중): 쪽지를 쓰면 오모기가 물고 날아가 30분~3시간 뒤에 전하고, 가끔은 잃어버립니다. 아이디나 친구 코드로 친구를 맺어 주고받으며, 내용은 받는 사람만 열 수 있게 잠가서 보냅니다. 서버는 Supabase (`omogi/server/schema.sql`, 주소와 공개용 키는 `omogi/server.json`), 없으면 나에게 보내는 연습 배달만 됩니다.
 - 설정: Omogi 앱을 다시 열면 설정 창이 뜨고, 화면의 오모기를 오른쪽 클릭해도 메뉴가 나옵니다 (메뉴 막대 아이콘이 가려진 Mac 용).
 - O/X 퀴즈: Loading Dose 와 같은 문항으로, 오모기가 가끔 문제를 물어 오거나 Claude·ChatGPT 앱의 답변을 기다리는 동안 카드가 뜹니다 (기본 꺼짐, `omogi/quizwatch.swift`).
-- Windows 판(테스트 0.1.0): `omogi/windows/` (C# WinForms). GitHub Actions 가 빌드하고 자체 점검을 돌립니다. 집중 모드와 일정 알림은 아직 없고, Mac 친구와 편지를 주고받을 수 있습니다.
+- Windows 판(테스트 0.1.1): `omogi/windows/` (C# WinForms). GitHub Actions 가 빌드하고 자체 점검을 돌립니다. 집중 모드와 일정 알림은 아직 없고, Mac 친구와 편지를 주고받을 수 있습니다.
 - 빌드: `omogi/build.sh` → `omogi/build/Omogi.app`. 조정은 `~/Library/Application Support/Omogi/config.json`.
 
 <p align="center">

@@ -317,6 +317,44 @@ namespace Omogi
 
     // ───────────────────────── 설정 창 ─────────────────────────
     // 트레이 메뉴와 같은 일을 하는 창. 앱을 처음 켰을 때와, 켜져 있는 앱을 다시 실행했을 때 뜬다.
+    // 화면 배율(100%, 125%, 150%…)에 맞춰 96dpi 기준 좌표를 늘린다.
+    // WinForms 의 자동 배율은 컨트롤을 넣는 순서에 따라 일부만 늘어나는 일이 있어 쓰지 않는다
+    // (글자만 커지고 창과 칸은 그대로여서 설정 항목이 잘려 보였다).
+    static class Dpi
+    {
+        static float k;
+        public static float K
+        {
+            get
+            {
+                if (k <= 0f)
+                {
+                    k = 1f;
+                    try { using (Graphics g = Graphics.FromHwnd(IntPtr.Zero)) k = Math.Max(1f, g.DpiX / 96f); }
+                    catch { }
+                }
+                return k;
+            }
+        }
+        public static void Force(float value) { k = value; }      // 자체 점검용: 다른 배율을 흉내 낸다
+        public static int S(int v) { return (int)Math.Round(v * K); }
+        public static Rectangle R(int x, int y, int w, int h) { return new Rectangle(S(x), S(y), S(w), S(h)); }
+
+        // 창이 화면보다 길면 화면 높이에 맞추고 세로로 스크롤할 수 있게 한다.
+        public static void FitToScreen(Form f)
+        {
+            try
+            {
+                int room = Screen.PrimaryScreen.WorkingArea.Height - S(60);
+                if (f.ClientSize.Height <= room) return;
+                f.AutoScrollMinSize = new Size(0, f.ClientSize.Height);
+                f.AutoScroll = true;
+                f.ClientSize = new Size(f.ClientSize.Width + SystemInformation.VerticalScrollBarWidth, room);
+            }
+            catch { }
+        }
+    }
+
     sealed class SettingsForm : Form
     {
         readonly TrayApp app;
@@ -329,8 +367,7 @@ namespace Omogi
             this.app = app;
             Text = "Omogi";
             Font = new Font("Malgun Gothic", 9f);
-            AutoScaleDimensions = new SizeF(96f, 96f);
-            AutoScaleMode = AutoScaleMode.Dpi;
+            AutoScaleMode = AutoScaleMode.None;         // 자동 배율은 쓰지 않는다. 좌표는 96dpi 기준으로 적고 Dpi.R() 로 직접 맞춘다.
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             MinimizeBox = false;
@@ -338,41 +375,42 @@ namespace Omogi
             BackColor = Color.White;
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
 
-            Bitmap face = app.Pet.FaceImage(46);
+            Bitmap face = app.Pet.FaceImage(Dpi.S(46));
             if (face != null)
-                Controls.Add(new PictureBox { Image = face, SizeMode = PictureBoxSizeMode.Normal, Bounds = new Rectangle(24, 20, 40, 46) });
-            Controls.Add(Label("Omogi", new Rectangle(76, 20, 300, 26), 13.5f, FontStyle.Bold, Color.FromArgb(28, 28, 30)));
-            Controls.Add(Label("화면에 사는 작은 뱁새", new Rectangle(77, 46, 300, 18), 9f, FontStyle.Regular, Color.Gray));
+                Controls.Add(new PictureBox { Image = face, SizeMode = PictureBoxSizeMode.Normal, Bounds = Dpi.R(24, 20, 40, 46) });
+            Controls.Add(Label("Omogi", Dpi.R(76, 20, 300, 26), 13.5f, FontStyle.Bold, Color.FromArgb(28, 28, 30)));
+            Controls.Add(Label("화면에 사는 작은 뱁새", Dpi.R(77, 46, 300, 18), 9f, FontStyle.Regular, Color.Gray));
 
             int y = 84;
             foreach (Toggle t in app.Toggles)
             {
                 Toggle toggle = t;
-                var box = new CheckBox { Text = t.Title, Bounds = new Rectangle(24, y, 372, 22), Font = new Font("Malgun Gothic", 9.75f, FontStyle.Bold) };
+                var box = new CheckBox { Text = t.Title, Bounds = Dpi.R(24, y, 372, 22), Font = new Font("Malgun Gothic", 9.75f, FontStyle.Bold) };
                 box.CheckedChanged += (s, e) => { if (!refreshing) app.FlipToggle(toggle); };
                 boxes.Add(box);
                 Controls.Add(box);
-                Controls.Add(Label(t.Note, new Rectangle(42, y + 22, 360, 18), 8.25f, FontStyle.Regular, Color.Gray));
+                Controls.Add(Label(t.Note, Dpi.R(42, y + 22, 360, 18), 8.25f, FontStyle.Regular, Color.Gray));
                 y += 52;
             }
 
-            Controls.Add(new Label { Bounds = new Rectangle(24, y + 2, 372, 1), BackColor = Color.FromArgb(225, 225, 225) });
+            Controls.Add(new Label { Bounds = Dpi.R(24, y + 2, 372, 1), BackColor = Color.FromArgb(225, 225, 225) });
             y += 14;
-            var write = Button("편지 쓰기…", new Rectangle(22, y, 122, 32), () => app.LetterWindows.ShowCompose());
-            inbox = Button("편지함…", new Rectangle(149, y, 122, 32), () => app.LetterWindows.ShowInbox());
-            var friends = Button("친구…", new Rectangle(276, y, 122, 32), () => app.LetterWindows.ShowFriends());
+            var write = Button("편지 쓰기…", Dpi.R(22, y, 122, 32), () => app.LetterWindows.ShowCompose());
+            inbox = Button("편지함…", Dpi.R(149, y, 122, 32), () => app.LetterWindows.ShowInbox());
+            var friends = Button("친구…", Dpi.R(276, y, 122, 32), () => app.LetterWindows.ShowFriends());
             y += 38;
-            var solve = Button("지금 한 문제 풀기", new Rectangle(22, y, 186, 32), () => app.Quiz.SolveOne());
-            var pick = Button("O/X 과목 고르기…", new Rectangle(212, y, 186, 32), () => app.ShowSubjects());
+            var solve = Button("지금 한 문제 풀기", Dpi.R(22, y, 186, 32), () => app.Quiz.SolveOne());
+            var pick = Button("O/X 과목 고르기…", Dpi.R(212, y, 186, 32), () => app.ShowSubjects());
             Controls.AddRange(new Control[] { write, inbox, friends, solve, pick });
             y += 44;
 
             Controls.Add(Label("이 창은 Omogi 를 다시 실행하면 언제든 뜹니다. 화면의 오모기를 오른쪽 클릭하거나, 작업 표시줄 오른쪽(시계 옆, 안 보이면 ^ 안)의 새 얼굴 아이콘을 오른쪽 클릭해도 같은 메뉴가 나와요.",
-                new Rectangle(24, y, 374, 54), 8.25f, FontStyle.Regular, Color.Gray));
+                Dpi.R(24, y, 374, 54), 8.25f, FontStyle.Regular, Color.Gray));
             y += 62;
-            Controls.Add(Label(AppInfo.Credit + "  ·  v" + AppInfo.Version + " (Windows)", new Rectangle(24, y + 7, 250, 18), 8.25f, FontStyle.Regular, Color.DarkGray));
-            Controls.Add(Button("Omogi 종료", new Rectangle(288, y, 110, 28), () => app.Quit()));
-            ClientSize = new Size(420, y + 44);
+            Controls.Add(Label(AppInfo.Credit + "  ·  v" + AppInfo.Version + " (Windows)", Dpi.R(24, y + 7, 250, 18), 8.25f, FontStyle.Regular, Color.DarkGray));
+            Controls.Add(Button("Omogi 종료", Dpi.R(288, y, 110, 28), () => app.Quit()));
+            ClientSize = new Size(Dpi.S(420), Dpi.S(y + 44));
+            Dpi.FitToScreen(this);
         }
 
         static Label Label(string text, Rectangle r, float size, FontStyle style, Color color)
@@ -403,6 +441,22 @@ namespace Omogi
             base.OnFormClosing(e);
         }
 
+        // 자체 점검용: 창 밖으로 나간 항목이나, 칸보다 긴 한 줄 글자가 있으면 그 이름을 돌려준다.
+        public string LayoutProblem(bool measureText)
+        {
+            int w = ClientSize.Width, h = AutoScroll ? Math.Max(ClientSize.Height, AutoScrollMinSize.Height) : ClientSize.Height;
+            foreach (Control c in Controls)
+            {
+                if (c.Left < 0 || c.Top < 0 || c.Right > w || c.Bottom > h) return "창 밖: " + c.Text + " " + c.Bounds;
+                if (!measureText || c.Text.Length == 0 || c is Button) continue;
+                Size need = TextRenderer.MeasureText(c.Text, c.Font);
+                int room = c.Width - (c is CheckBox ? Dpi.S(20) : 0);
+                if (c.Height < need.Height * 2 && need.Width > room) return "글자가 김: " + c.Text + " (" + need.Width + " > " + room + ")";
+                if (need.Height > c.Height + 2 && c.Height < need.Height * 2) return "글자가 높음: " + c.Text;
+            }
+            return null;
+        }
+
         public void Snapshot(string path)
         {
             using (var bmp = new Bitmap(Width, Height))
@@ -426,18 +480,17 @@ namespace Omogi
             this.deck = deck;
             Text = "O/X 과목 고르기";
             Font = new Font("Malgun Gothic", 9f);
-            AutoScaleDimensions = new SizeF(96f, 96f);
-            AutoScaleMode = AutoScaleMode.Dpi;
+            AutoScaleMode = AutoScaleMode.None;         // 자동 배율은 쓰지 않는다. 좌표는 96dpi 기준으로 적고 Dpi.R() 로 직접 맞춘다.
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             MinimizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
-            ClientSize = new Size(380, 520);
+            ClientSize = new Size(Dpi.S(380), Dpi.S(520));
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
 
-            count.Bounds = new Rectangle(18, 14, 344, 18);
+            count.Bounds = Dpi.R(18, 14, 344, 18);
             count.ForeColor = Color.Gray;
-            list.Bounds = new Rectangle(16, 40, 348, 424);
+            list.Bounds = Dpi.R(16, 40, 348, 424);
             list.CheckOnClick = true;
             list.IntegralHeight = false;
             list.ItemCheck += (s, e) =>
@@ -448,9 +501,9 @@ namespace Omogi
                 deck.SaveState();
                 UpdateCount();
             };
-            var allOn = new Button { Text = "모두 켜기", Bounds = new Rectangle(16, 476, 100, 30), FlatStyle = FlatStyle.System };
+            var allOn = new Button { Text = "모두 켜기", Bounds = Dpi.R(16, 476, 100, 30), FlatStyle = FlatStyle.System };
             allOn.Click += (s, e) => { deck.PackOff.Clear(); deck.SaveState(); Reload(); };
-            var allOff = new Button { Text = "모두 끄기", Bounds = new Rectangle(122, 476, 100, 30), FlatStyle = FlatStyle.System };
+            var allOff = new Button { Text = "모두 끄기", Bounds = Dpi.R(122, 476, 100, 30), FlatStyle = FlatStyle.System };
             allOff.Click += (s, e) => { deck.PackOff = new HashSet<string>(deck.Topics); deck.SaveState(); Reload(); };
             Controls.AddRange(new Control[] { count, list, allOn, allOff });
         }
@@ -655,6 +708,19 @@ namespace Omogi
                         s.Snapshot(Path.Combine(dir, "window-settings.png"));
                         check("설정 창 " + s.Width + "x" + s.Height, s.Height > 300);
                         s.Hide();
+                        // 배율을 바꿔 가며 설정 창을 새로 만들어, 항목이 창 밖으로 나가거나 글자가 칸보다 길지 않은지 본다.
+                        float real = Dpi.K;
+                        foreach (float k in new[] { real, 1.25f, 1.5f, 2f })
+                        {
+                            Dpi.Force(k);
+                            using (var t = new SettingsForm(app))
+                            {
+                                string bad = t.LayoutProblem(k == real);
+                                check("설정 창 배치 (배율 " + k.ToString("0.00") + ", " + t.ClientSize.Width + "x" + t.ClientSize.Height + ")" + (bad == null ? "" : " — " + bad), bad == null);
+                                if (k == 1.5f) { t.Show(); t.Snapshot(Path.Combine(dir, "window-settings-150.png")); t.Hide(); }
+                            }
+                        }
+                        Dpi.Force(real);
                         var forms = new[]
                         {
                             new KeyValuePair<string, Form>("window-compose.png", app.LetterWindows.ComposeForm),
