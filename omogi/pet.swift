@@ -35,6 +35,110 @@ final class PetView: NSView {
     }
 }
 
+/// 놀러 온 친구의 새: 화면 밖에서 날아와 내 오모기 옆에 앉아 말풍선을 띄우고, 잠깐 좋아하다가 날아간다.
+fileprivate final class Visitor {
+    private let panel: NSPanel
+    private let layer = CALayer()
+    private let note: NSPanel
+    private let fly: [CGImage], happy: [CGImage]
+    private let from: CGPoint, land: CGPoint
+    private let born = CACurrentMediaTime()
+    private let stay: Double
+    private let size = CGSize(width: 108, height: 84)
+    private let faceRight: Bool
+
+    init(fly: [CGImage], happy: [CGImage], from: CGPoint, land: CGPoint, text: String, stay: Double) {
+        self.fly = fly
+        self.happy = happy
+        self.from = from
+        self.land = land
+        self.stay = stay
+        faceRight = land.x >= from.x
+        func make(_ r: NSRect) -> NSPanel {
+            let p = NSPanel(contentRect: r, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+            p.isOpaque = false
+            p.backgroundColor = .clear
+            p.ignoresMouseEvents = true
+            p.level = .floating
+            p.hidesOnDeactivate = false
+            p.isReleasedWhenClosed = false
+            p.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+            return p
+        }
+        panel = make(NSRect(origin: .zero, size: size))
+        panel.hasShadow = false
+        let view = NSView(frame: NSRect(origin: .zero, size: size))
+        view.wantsLayer = true
+        panel.contentView = view
+        layer.frame = CGRect(origin: .zero, size: size)
+        layer.contentsGravity = .resize
+        layer.magnificationFilter = .nearest
+        layer.minificationFilter = .nearest
+        view.layer?.addSublayer(layer)
+
+        let label = NSTextField(labelWithString: text)
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.textColor = NSColor(srgbRed: 0.16, green: 0.17, blue: 0.2, alpha: 1)
+        label.lineBreakMode = .byTruncatingTail
+        label.sizeToFit()
+        let w = min(280, label.frame.width + 22)
+        note = make(NSRect(x: 0, y: 0, width: w, height: 26))
+        note.hasShadow = true
+        let box = NSView(frame: NSRect(x: 0, y: 0, width: w, height: 26))
+        box.wantsLayer = true
+        box.layer?.backgroundColor = NSColor(srgbRed: 0.98, green: 0.97, blue: 0.95, alpha: 1).cgColor
+        box.layer?.cornerRadius = 10
+        box.layer?.borderWidth = 1
+        box.layer?.borderColor = NSColor(white: 0, alpha: 0.14).cgColor
+        label.frame = NSRect(x: 11, y: 5, width: w - 22, height: 16)
+        box.addSubview(label)
+        note.contentView = box
+        place(fly[0], at: from, right: faceRight)
+        panel.orderFrontRegardless()
+    }
+
+    private func place(_ image: CGImage, at feet: CGPoint, right: Bool) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        layer.contents = image
+        layer.transform = CATransform3DMakeScale(right ? 1 : -1, 1, 1)
+        CATransaction.commit()
+        panel.setFrameOrigin(CGPoint(x: (feet.x - size.width / 2).rounded(), y: (feet.y - 3).rounded()))
+    }
+
+    /// 한 틱 움직인다. 다 날아갔으면 false.
+    func update(now: Double) -> Bool {
+        let t = now - born
+        let arrive = 1.3, leave = 1.3
+        if t < arrive {
+            let k = CGFloat(t / arrive), e = 1 - (1 - k) * (1 - k)
+            let p = CGPoint(x: from.x + (land.x - from.x) * e, y: from.y + (land.y - from.y) * e + sin(k * .pi) * 30)
+            place(fly[Int(t * 14) % fly.count], at: p, right: faceRight)
+        } else if t < arrive + stay {
+            let u = t - arrive
+            let hop = abs(sin(u * 6)) * 8
+            place(happy[Int(u * 5) % happy.count], at: CGPoint(x: land.x, y: land.y + hop), right: !faceRight)   // 내 오모기 쪽을 본다
+            if !note.isVisible {
+                let vf = (NSScreen.screens.first { $0.frame.contains(land) } ?? NSScreen.main)?.visibleFrame ?? .zero
+                let w = note.frame.width
+                note.setFrameOrigin(CGPoint(x: min(vf.maxX - w - 6, max(vf.minX + 6, land.x - w / 2)).rounded(), y: (land.y + 66).rounded()))
+                note.orderFrontRegardless()
+            }
+        } else if t < arrive + stay + leave {
+            if note.isVisible { note.orderOut(nil) }
+            let k = CGFloat((t - arrive - stay) / leave), e = k * k
+            let p = CGPoint(x: land.x + (from.x - land.x) * e, y: land.y + (from.y - land.y) * e + sin(k * .pi) * 30)
+            place(fly[Int(t * 14) % fly.count], at: p, right: !faceRight)
+        } else {
+            remove()
+            return false
+        }
+        return true
+    }
+
+    func remove() { panel.orderOut(nil); note.orderOut(nil) }
+}
+
 /// 꼬마 뱁새를 누를 수 있게 하는 뷰
 fileprivate final class CatchView: NSView {
     var onDown: (() -> Void)?
@@ -147,6 +251,7 @@ final class Pet: NSObject {
         case build1, build2, nest0, nest1, drink0, drink1, drink2
         case stretch, cal0, cal1
         case mailFly0, mailFly1, mailFly2, mail0, mail1
+        case read0, read1
     }
     private enum Mode {
         case sit, hop, sleep, flyOut, perch, flyHome, roam, roll, chase, peck, held, fall, nest, drink, eyes, stretch, calendar
@@ -233,6 +338,9 @@ final class Pet: NSObject {
     private var popAt = 0.0                       // 터질 때 (0 이면 예정 없음)
     private var minis: [MiniBird] = []
     private let popStreak = 5
+    /// 공부 중: 가만히 앉아 책을 본다 (돌아다니지 않는다).
+    var studying = false { didSet { if studying != oldValue { retime() } } }
+    private var visitors: [Visitor] = []
     /// 터져 나온 꼬마 뱁새를 눌러 잡았을 때 (있으면 꼬마들을 누를 수 있고, 조금 더 오래 머문다)
     var onMiniCaught: (() -> Void)?
 
@@ -472,6 +580,24 @@ final class Pet: NSObject {
         return NSImage(cgImage: big, size: NSSize(width: framePx.width * scale, height: framePx.height * scale))
     }
 
+    /// 친구의 새가 놀러 온다: 그 친구가 입은 옷 그대로 날아와 옆에 앉고, 말풍선을 띄웠다가 돌아간다.
+    func visit(wear rows: [Int], text: String) {
+        guard shown, !bareFrames.isEmpty, visitors.count < 3 else { return }      // 오모기를 숨겨 두었으면 손님도 오지 않는다
+        let screen = currentScreen()
+        let vf = screen.visibleFrame
+        let base = pos
+        // 내 오모기 옆자리 (화면 가운데 쪽), 이미 온 친구가 있으면 그만큼 더 옆으로
+        let side: CGFloat = base.x > vf.midX ? -1 : 1
+        let land = CGPoint(x: min(vf.maxX - 60, max(vf.minX + 60, base.x + side * CGFloat(76 + visitors.count * 64))), y: floorY(on: screen))
+        let from = CGPoint(x: side < 0 ? vf.minX - 80 : vf.maxX + 80, y: vf.minY + vf.height * 0.55)
+        let valid = rows.filter { $0 >= 0 && $0 < wearRows.count }
+        func img(_ f: Frame) -> CGImage { return dressed(f.rawValue, valid) }
+        visitors.append(Visitor(fly: [img(.fly0), img(.fly1), img(.fly2), img(.fly1)], happy: [img(.happy0), img(.happy1)],
+                                from: from, land: land, text: text, stay: reduceMotion() ? 5 : 4))
+        retime()
+    }
+    var visitorCount: Int { return visitors.count }
+
     /// 짧은 말풍선 (꼬마 뱁새를 얻었을 때 등)
     func cheer(_ text: String) {
         guard shown else { return }
@@ -582,6 +708,8 @@ final class Pet: NSObject {
     func stop() {
         minis.forEach { $0.remove() }
         minis = []
+        visitors.forEach { $0.remove() }
+        visitors = []
         popAt = 0
         endChase()
         bubble.orderOut(nil)
@@ -741,7 +869,7 @@ final class Pet: NSObject {
     private func retime() {
         let moving = mode == .hop || mode == .flyOut || mode == .flyHome || mode == .roam || mode == .roll
             || mode == .chase || mode == .peck || mode == .held || mode == .fall || mode == .depart || mode == .arrive
-            || mode == .tumble || !minis.isEmpty || popAt > 0 || abs(growthTarget - growth) > 0.004
+            || mode == .tumble || !minis.isEmpty || !visitors.isEmpty || popAt > 0 || abs(growthTarget - growth) > 0.004
             || CACurrentMediaTime() < reactUntil
         let want: TimeInterval = moving ? 1.0 / 30 : 1.0 / 12
         guard want != interval || timer == nil else { return }
@@ -852,12 +980,13 @@ final class Pet: NSObject {
             else { setMode(.sit); frame = .sit0 }
         case .sit:
             if now < lookUntil { frame = (now >= tiltAt && now < tiltAt + 0.8) ? .tilt : .front }
+            else if studying { frame = now.truncatingRemainder(dividingBy: 6.5) < 0.35 ? .read1 : .read0 }     // 가끔 한 장 넘긴다
             else { frame = Int(now / 0.9) % 2 == 0 ? .sit0 : .sit1 }
             // 생활 습관: 오래 손을 놓으면 둥지를 짓고, 계속 쓰고 있으면 가끔 물을 마신다.
             let idle = idleSeconds()
             if idle > nestMinutes * 60 { lookUntil = 0; setMode(.nest) }
             else if Pet.habitsOn, idle < 120, now - lastNudge > 90, startNudge(now) { }
-            else if now >= nextAction { chooseNext(now) }
+            else if now >= nextAction, !studying { chooseNext(now) }
         case .sleep:
             // 꾸벅꾸벅: 눈 감고 버티다가 고개가 천천히 떨어지고, 푹 숙였다가 화들짝 든다.
             let u = t.truncatingRemainder(dividingBy: nodPeriod)
@@ -1039,6 +1168,10 @@ final class Pet: NSObject {
         if !minis.isEmpty {
             minis = minis.filter { $0.update(dt: dt, now: now) }
             if minis.isEmpty { retime() }
+        }
+        if !visitors.isEmpty {
+            visitors = visitors.filter { $0.update(now: now) }
+            if visitors.isEmpty { retime() }
         }
 
         movePanel(lift: lift)

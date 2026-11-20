@@ -103,6 +103,7 @@ assets/                                          README용 아이콘과 시연 �
 - 설정: Omogi 앱을 다시 열면 설정 창이 뜨고, 화면의 오모기를 오른쪽 클릭해도 메뉴가 나옵니다 (메뉴 막대 아이콘이 가려진 Mac 용).
 - O/X 퀴즈: Loading Dose 와 같은 문항으로, 오모기가 가끔 문제를 물어 오거나 Claude·ChatGPT 앱의 답변을 기다리는 동안 카드가 뜹니다 (기본 꺼짐, `omogi/quizwatch.swift`).
 - 꼬마 뱁새와 옷장: O/X 를 맞히면 꼬마 뱁새가 모이고(5연속으로 터지면 흩어지는 꼬마를 눌러 잡는다), 그것으로 모자·안경·목도리 같은 옷을 사서 입힙니다. 옷 그림은 `tools/make_pet_sprites.py` 가 자세마다 만들어 `omogi/pet/wear.png` 에 넣습니다. 내 컴퓨터에만 저장됩니다.
+- 마을: 친구들의 오모기가 입은 옷 그대로 한 창에 모이고, 오늘 맞힌 문제 수·공부 시간·공부 중인지가 보입니다. "공부 시작"을 누르면 오모기가 책을 보고, "콕"을 누르면 내 새가 친구 화면에 다녀옵니다. 과목마다 100문제를 맞히면 그 과목 배지를 받습니다. 서버 쪽은 `omogi/server/schema.sql` 의 "마을" 부분입니다 (편지와 달리 잠그지 않은 정보).
 - Windows 판(테스트 0.2.0): `omogi/windows/` (C# WinForms). GitHub Actions 가 빌드하고 자체 점검을 돌립니다. 집중 모드와 일정 알림은 아직 없고, Mac 친구와 편지를 주고받을 수 있습니다.
 - 빌드: `omogi/build.sh` → `omogi/build/Omogi.app`. 조정은 `~/Library/Application Support/Omogi/config.json`.
 

@@ -98,6 +98,8 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem!
     private let statusLine = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private let wardrobeItem = NSMenuItem(title: "옷장…", action: #selector(openWardrobe), keyEquivalent: "")
+    private let villageItem = NSMenuItem(title: "마을…", action: #selector(openVillage), keyEquivalent: "")
+    private let studyItem = NSMenuItem(title: "공부 시작", action: #selector(toggleStudy), keyEquivalent: "")
     private let petItem = NSMenuItem(title: "오모기 보이기", action: #selector(togglePet), keyEquivalent: "")
     private let focusItem = NSMenuItem(title: "집중 모드 — 유튜브·인스타그램을 열면 오모기가 닫음", action: #selector(toggleFocus), keyEquivalent: "")
     private let habitsItem = NSMenuItem(title: "습관 알림 — 물·눈 쉬기·스트레칭", action: #selector(toggleHabits), keyEquivalent: "")
@@ -149,7 +151,6 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
             wd.useScratchStore()
             var out: [String] = []
             func check(_ name: String, _ ok: Bool) { out.append((ok ? "PASS " : "FAIL ") + name) }
-            check("옷 그림 \(pet.wearCount)줄 = 물건 \(Wardrobe.items.count)개", pet.wearCount == Wardrobe.items.count)
             for _ in 0..<4 { wd.answered(correct: true, topic: "해부학", selfGraded: false, popped: true) }
             check("4문제 정답 → 4마리 (\(wd.minis))", wd.minis == 4)
             wd.answered(correct: true, topic: "해부학", selfGraded: true, popped: true)
@@ -170,15 +171,32 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
             check("같은 자리는 하나만 (머리: 학사모)", wd.wornRows == [5])
             _ = wd.buy("scarf"); wd.toggleWear("scarf"); _ = wd.buy("glasses"); wd.toggleWear("glasses")
             check("목 → 얼굴 → 머리 순서로 겹침", wd.wornRows == [0, 2, 5])
-            check("메달은 살 수 없음", !wd.buy("medal"))
+            check("배지는 살 수 없고, 조건을 채우기 전에는 못 닮", !wd.buy("badge4") && !wd.owns("badge4"))
             for _ in 0..<100 { wd.answered(correct: true, topic: "약리학", selfGraded: false, popped: true) }
-            check("한 과목 100문제 → 메달", wd.owned.contains("medal"))
+            check("약리학 100문제 → 약리학 배지만 받음", wd.owns("badge4") && !wd.owns("badge0"))
+            check("오늘 맞힌 수 \(wd.correctToday)", wd.correctToday == 109)
+            check("옷 그림 줄 수: 옷 8 + 배지 25 = \(pet.wearCount)", pet.wearCount == 8 + Wardrobe.badges.count)
             pet.setWear(wd.wornRows)
             check("펫이 옷을 입음 \(pet.worn)", pet.worn == [0, 2, 5])
+            check("서버에 올릴 옷 이름 \(wd.wornNames)", wd.wornNames == "scarf,glasses,gradcap" && wd.rows(forNames: "scarf,xx,badge4,crown") == [0, 12, 6])
+            wd.toggleWear("badge4")
+            check("배지를 달면 목도리는 벗음", wd.wornRows == [12, 2, 5])
+            wd.toggleWear("scarf")
+            let studied = Study.shared.secondsToday
+            Study.shared.start()
+            check("공부 시작 → 공부 중", Study.shared.studying)
+            Study.shared.stop()
+            check("공부 끝", !Study.shared.studying && Study.shared.secondsToday >= studied)
+            villageWindow.show()
+            villageWindow.debugFill([
+                Villager(id: "a", name: "지우", handle: "jiwoo", wear: "scarf,glasses,straw", day: Wardrobe.today(), correct: 42, studySecs: 4500, studying: true, seenSecs: 30),
+                Villager(id: "b", name: "서연", handle: nil, wear: "badge5,crown", day: Wardrobe.today(), correct: nil, studySecs: 0, studying: false, seenSecs: 7200),
+                Villager(id: "c", name: "민재", handle: "mj", wear: "", day: "2000-01-01", correct: 5, studySecs: 600, studying: false, seenSecs: 200000)])
             pet.snapshotPoses(to: dir.appendingPathComponent("wardrobe-poses.png"))
             wardrobeWindow.show()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                 self.wardrobeWindow.snapshot(to: dir.appendingPathComponent("wardrobe-window.png"))
+                self.villageWindow.snapshot(to: dir.appendingPathComponent("village-window.png"))
                 wd.toggleWear("gradcap")
                 check("벗기", wd.wornRows == [0, 2])
                 try? out.joined(separator: "\n").write(to: dir.appendingPathComponent("wardrobe-result.txt"), atomically: true, encoding: .utf8)
@@ -194,6 +212,13 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if s.pet.worn != Wardrobe.shared.wornRows { s.pet.setWear(Wardrobe.shared.wornRows) }
             s.settingsWindow.refresh()
         }
+        // 공부 중에는 오모기가 책을 본다.
+        NotificationCenter.default.addObserver(forName: Study.changed, object: nil, queue: .main) { [weak self] _ in
+            self?.pet.studying = Study.shared.studying
+            self?.settingsWindow.refresh()
+        }
+        letters.onNewLetter = { [weak self] name in self?.village.letterArrived(from: name) }
+        village.start()
         // 처음 켰을 때는 설정 창을 보여 준다 (메뉴 막대 아이콘이 다른 아이콘에 밀려 안 보이는 Mac 이 많다).
         if !UserDefaults.standard.bool(forKey: "welcomed"), !args.contains("--send-test") {
             UserDefaults.standard.set(true, forKey: "welcomed")
@@ -238,6 +263,10 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc func openSettingsWindow() { settingsWindow.show() }
     private lazy var wardrobeWindow = WardrobeWindow(pet: pet)
     @objc func openWardrobe() { wardrobeWindow.show() }
+    private lazy var village = Village(letters: letters, pet: pet)
+    private lazy var villageWindow = VillageWindow(village: village, pet: pet)
+    @objc func openVillage() { villageWindow.show() }
+    @objc func toggleStudy() { if Study.shared.studying { Study.shared.stop() } else { Study.shared.start() } }
 
     /// 설정 창이 그릴 지금 상태
     var toggles: [(title: String, note: String, on: Bool, action: Selector)] {
@@ -278,6 +307,8 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         wardrobeItem.target = self
         menu.addItem(wardrobeItem)
+        studyItem.target = self
+        menu.addItem(studyItem)
         menu.addItem(.separator())
         let writeItem = NSMenuItem(title: "편지 쓰기…", action: #selector(openCompose), keyEquivalent: "")
         writeItem.target = self
@@ -287,6 +318,8 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let friendsItem = NSMenuItem(title: "친구…", action: #selector(openFriends), keyEquivalent: "")
         friendsItem.target = self
         menu.addItem(friendsItem)
+        villageItem.target = self
+        menu.addItem(villageItem)
         menu.addItem(.separator())
         let settingsItem = NSMenuItem(title: "설정 창 열기…", action: #selector(openSettingsWindow), keyEquivalent: "")
         settingsItem.target = self
@@ -321,6 +354,8 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let unread = letters.unreadCount
         inboxItem.title = unread > 0 ? "편지함… (새 편지 \(unread)통)" : "편지함…"
         wardrobeItem.title = "옷장… (꼬마 뱁새 \(Wardrobe.shared.minis)마리)"
+        let st = Study.shared
+        studyItem.title = st.studying ? "공부 끝 (오늘 \(Study.clock(st.secondsToday)))" : "공부 시작"
         if (FocusGuard.enabled || QuizWatcher.enterOn) && !AXIsProcessTrusted() {
             statusLine.title = "권한 필요 — 손쉬운 사용에서 'Omogi'를 허용하세요"
         } else if !Pet.enabled {
@@ -564,18 +599,20 @@ final class SettingsWindow: NSObject {
         let unread = app.unreadLetters
         let buttons: [(String, Selector)] = [("편지 쓰기…", #selector(AppController.openCompose)),
                                              (unread > 0 ? "편지함 (\(unread))…" : "편지함…", #selector(AppController.openInbox)),
-                                             ("친구…", #selector(AppController.openFriends))]
+                                             ("친구…", #selector(AppController.openFriends)),
+                                             ("마을…", #selector(AppController.openVillage))]
         for (i, (title, sel)) in buttons.enumerated() {
             let b = NSButton(title: title, target: app, action: sel)
-            b.frame = NSRect(x: 20 + CGFloat(i) * 128, y: y - 22, width: 124, height: 32)
+            b.frame = NSRect(x: 20 + CGFloat(i) * 96, y: y - 22, width: 92, height: 32)
             b.bezelStyle = .rounded
             root.addSubview(b)
         }
-        for (i, (title, sel)) in [("한 문제 풀기", #selector(AppController.solveNow)),
-                                  ("과목 고르기…", #selector(AppController.openSubjects)),
-                                  ("옷장 (\(Wardrobe.shared.minis))…", #selector(AppController.openWardrobe))].enumerated() {
+        for (i, (title, sel)) in [("문제 풀기", #selector(AppController.solveNow)),
+                                  ("과목…", #selector(AppController.openSubjects)),
+                                  ("옷장 (\(Wardrobe.shared.minis))…", #selector(AppController.openWardrobe)),
+                                  (Study.shared.studying ? "공부 끝" : "공부 시작", #selector(AppController.toggleStudy))].enumerated() {
             let b = NSButton(title: title, target: app, action: sel)
-            b.frame = NSRect(x: 20 + CGFloat(i) * 128, y: y - 58, width: 124, height: 32)
+            b.frame = NSRect(x: 20 + CGFloat(i) * 96, y: y - 58, width: 92, height: 32)
             b.bezelStyle = .rounded
             root.addSubview(b)
         }

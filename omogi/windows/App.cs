@@ -31,6 +31,7 @@ namespace Omogi
         public readonly QuizWatcher Quiz;
         public readonly LetterBox Letters;
         public readonly LetterWindows LetterWindows;
+        public readonly Village Village;
         readonly NotifyIcon tray = new NotifyIcon();
         readonly ContextMenuStrip menu = new ContextMenuStrip();
         readonly ToolStripMenuItem statusItem = new ToolStripMenuItem("") { Enabled = false };
@@ -42,6 +43,8 @@ namespace Omogi
         SubjectsForm subjects;
         WardrobeForm wardrobe;
         readonly ToolStripMenuItem wardrobeItem = new ToolStripMenuItem("옷장…");
+        readonly ToolStripMenuItem studyItem = new ToolStripMenuItem("공부 시작");
+        VillageForm villageForm;
         Icon trayIcon;
 
         const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
@@ -53,6 +56,8 @@ namespace Omogi
             Quiz = new QuizWatcher(Pet);
             Letters = new LetterBox(Pet);
             LetterWindows = new LetterWindows(Letters);
+            Village = new Village(Letters, Pet);
+            Letters.OnNewLetter = name => Village.LetterArrived(name);
             Pet.OnMailOpen = () => LetterWindows.ShowInbox();
             Letters.Changed += () => { if (settings != null && settings.Visible) settings.RefreshState(); };
             // 입은 옷을 펫에 입히고, 옷장이 바뀔 때마다 다시 입힌다.
@@ -94,8 +99,17 @@ namespace Omogi
                 Get = () => Settings.QuizBringOn, Flip = () => Settings.QuizBringOn = !Settings.QuizBringOn,
             });
 
+            // 공부 중에는 오모기가 책을 본다.
+            Study.Changed += () =>
+            {
+                Pet.Studying = Study.Studying;
+                if (settings != null && !settings.IsDisposed && settings.Visible) settings.RefreshState();
+            };
+            Pet.Studying = Study.Studying;
+
             BuildMenu();
             Letters.Start();
+            Village.Start();
             Quiz.Start();
             Log.Write("──── 실행 v" + AppInfo.Version + " 문제=" + Quiz.Deck.BuiltinCount + "+" + Quiz.Deck.OwnCount
                 + " server=" + (Server.Shared != null) + " OS=" + Environment.OSVersion.Version);
@@ -153,11 +167,14 @@ namespace Omogi
             menu.Items.Add("내 문제 다시 읽기", null, (s, e) => { Quiz.Deck.LoadOwn(); Notify("내 문제 " + Quiz.Deck.OwnCount + "개를 읽었습니다."); });
             wardrobeItem.Click += (s, e) => ShowWardrobe();
             menu.Items.Add(wardrobeItem);
+            studyItem.Click += (s, e) => ToggleStudy();
+            menu.Items.Add(studyItem);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("편지 쓰기…", null, (s, e) => LetterWindows.ShowCompose());
             inboxItem.Click += (s, e) => LetterWindows.ShowInbox();
             menu.Items.Add(inboxItem);
             menu.Items.Add("친구…", null, (s, e) => LetterWindows.ShowFriends());
+            menu.Items.Add("마을…", null, (s, e) => ShowVillage());
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("설정 창 열기…", null, (s, e) => ShowSettings());
             var preview = new ToolStripMenuItem("동작 보기");
@@ -201,6 +218,7 @@ namespace Omogi
             int unread = Letters.UnreadCount;
             inboxItem.Text = unread > 0 ? "편지함… (새 편지 " + unread + "통)" : "편지함…";
             wardrobeItem.Text = "옷장… (꼬마 뱁새 " + Wardrobe.Minis + "마리)";
+            studyItem.Text = Study.Studying ? "공부 끝 (오늘 " + Study.Clock(Study.SecondsToday) + ")" : "공부 시작";
             startupItem.Checked = StartupOn;
             if (Settings.QuizEnterOn && Quiz.HookFailed) statusItem.Text = "키 감지를 켜지 못했어요 — Enter 를 눌러도 문제가 안 뜹니다";
             else if (!Settings.PetOn) statusItem.Text = "오모기가 숨어 있어요";
@@ -249,6 +267,22 @@ namespace Omogi
             {
                 if (wardrobe == null || wardrobe.IsDisposed) wardrobe = new WardrobeForm(Pet);
                 return wardrobe;
+            }
+        }
+
+        public void ToggleStudy()
+        {
+            if (Study.Studying) Study.Stop(); else Study.Start();
+        }
+
+        public void ShowVillage() { VillageWindow.Open(); }
+
+        public VillageForm VillageWindow
+        {
+            get
+            {
+                if (villageForm == null || villageForm.IsDisposed) villageForm = new VillageForm(Village, Pet);
+                return villageForm;
             }
         }
 
@@ -338,6 +372,7 @@ namespace Omogi
         public void Quit()
         {
             tray.Visible = false;
+            try { Study.Stop(); } catch { }      // 공부 중에 끄면 지금까지 센 시간을 적어 둔다
             Quiz.Stop();
             Pet.Stop();
             ExitThread();
@@ -388,7 +423,7 @@ namespace Omogi
     {
         readonly TrayApp app;
         readonly List<CheckBox> boxes = new List<CheckBox>();
-        readonly Button inbox, closet;
+        readonly Button inbox, closet, study;
         bool refreshing;
 
         public SettingsForm(TrayApp app)
@@ -424,14 +459,16 @@ namespace Omogi
 
             Controls.Add(new Label { Bounds = Dpi.R(24, y + 2, 372, 1), BackColor = Color.FromArgb(225, 225, 225) });
             y += 14;
-            var write = Button("편지 쓰기…", Dpi.R(22, y, 122, 32), () => app.LetterWindows.ShowCompose());
-            inbox = Button("편지함…", Dpi.R(149, y, 122, 32), () => app.LetterWindows.ShowInbox());
-            var friends = Button("친구…", Dpi.R(276, y, 122, 32), () => app.LetterWindows.ShowFriends());
+            var write = Button("편지 쓰기…", Dpi.R(22, y, 92, 32), () => app.LetterWindows.ShowCompose());
+            inbox = Button("편지함…", Dpi.R(22 + 96, y, 92, 32), () => app.LetterWindows.ShowInbox());
+            var friends = Button("친구…", Dpi.R(22 + 96 * 2, y, 92, 32), () => app.LetterWindows.ShowFriends());
+            var town = Button("마을…", Dpi.R(22 + 96 * 3, y, 92, 32), () => app.ShowVillage());
             y += 38;
-            var solve = Button("한 문제 풀기", Dpi.R(22, y, 122, 32), () => app.Quiz.SolveOne());
-            var pick = Button("과목 고르기…", Dpi.R(149, y, 122, 32), () => app.ShowSubjects());
-            closet = Button("옷장…", Dpi.R(276, y, 122, 32), () => app.ShowWardrobe());
-            Controls.AddRange(new Control[] { write, inbox, friends, solve, pick, closet });
+            var solve = Button("문제 풀기", Dpi.R(22, y, 92, 32), () => app.Quiz.SolveOne());
+            var pick = Button("과목…", Dpi.R(22 + 96, y, 92, 32), () => app.ShowSubjects());
+            closet = Button("옷장…", Dpi.R(22 + 96 * 2, y, 92, 32), () => app.ShowWardrobe());
+            study = Button("공부 시작", Dpi.R(22 + 96 * 3, y, 92, 32), () => app.ToggleStudy());
+            Controls.AddRange(new Control[] { write, inbox, friends, town, solve, pick, closet, study });
             y += 44;
 
             Controls.Add(Label("이 창은 Omogi 를 다시 실행하면 언제든 뜹니다. 화면의 오모기를 오른쪽 클릭하거나, 작업 표시줄 오른쪽(시계 옆, 안 보이면 ^ 안)의 새 얼굴 아이콘을 오른쪽 클릭해도 같은 메뉴가 나와요.",
@@ -463,6 +500,7 @@ namespace Omogi
             int unread = app.UnreadLetters;
             inbox.Text = unread > 0 ? "편지함 (" + unread + ")…" : "편지함…";
             closet.Text = "옷장 (" + Wardrobe.Minis + ")…";
+            study.Text = Study.Studying ? "공부 끝" : "공부 시작";
         }
 
         // 닫으면 숨기기만 한다 (앱은 계속 돈다).
@@ -608,6 +646,7 @@ namespace Omogi
                 note("화면 " + screen.Width + "x" + screen.Height + " 작업 영역 " + Screen.PrimaryScreen.WorkingArea);
                 bool mailOpened = false;
                 float before = 0;
+                int studied = 0;
                 string scan = null, dump = null;
                 Form probe = null;
 
@@ -615,7 +654,7 @@ namespace Omogi
                 {
                     app = new TrayApp();
                     app.Pet.Calm = true;
-                    check("펫 그림 " + app.Pet.FrameCount + "프레임", app.Pet.FrameCount == 37);
+                    check("펫 그림 " + app.Pet.FrameCount + "프레임", app.Pet.FrameCount == 39);
                     app.Pet.SnapshotPoses(Path.Combine(dir, "poses.png"));
                     Deck deck = app.Quiz.Deck;
                     check("기본 제공 문제 " + deck.BuiltinCount + "개, 과목 " + deck.Topics.Count + "개", deck.BuiltinCount > 100 && deck.Topics.Count > 5);
@@ -727,6 +766,24 @@ namespace Omogi
                     shot("desk-10-mail.png");
                     check("누르면 편지함 열기 신호", app.Pet.TestOpenHeld() && mailOpened);
                 });
+                // 공부: 켜면 책을 보고, 끄면 그만둔다. 이어서 친구의 새가 놀러 온다.
+                after(300, () =>
+                {
+                    studied = Study.SecondsToday;
+                    Study.Start();
+                    check("공부 시작 → 공부 중, 오모기가 책을 봄", Study.Studying && app.Pet.Studying);
+                });
+                after(1200, () =>
+                {
+                    note("공부 중: " + app.Pet.DebugState);
+                    shot("desk-12-reading.png");
+                    Study.Stop();
+                    check("공부 끝", !Study.Studying && !app.Pet.Studying && Study.SecondsToday >= studied);
+                    app.Pet.Visit(new[] { 1, 2 }, "지우가 콕 찔렀어요");
+                    check("친구의 새가 놀러 옴", app.Pet.VisitorCount == 1);
+                });
+                after(2500, () => { note("손님: " + app.Pet.DebugState); shot("desk-11-visitor.png"); });
+                after(5500, () => check("손님이 돌아감 (" + app.Pet.VisitorCount + ")", app.Pet.VisitorCount == 0));
                 after(300, () =>
                 {
                     try { LetterSelfTest.Run(check); }
@@ -743,7 +800,7 @@ namespace Omogi
                         check("설정 창 " + s.Width + "x" + s.Height, s.Height > 300);
                         s.Hide();
                         // 옷장: 사고, 입히고, 창을 찍는다.
-                        check("옷 그림 " + app.Pet.WearCount + "줄 = 물건 " + Wardrobe.Items.Length + "개", app.Pet.WearCount == Wardrobe.Items.Length);
+                        check("옷 그림 줄 수: 옷 8 + 배지 " + Wardrobe.Badges.Length + " = " + app.Pet.WearCount, app.Pet.WearCount == 8 + Wardrobe.Badges.Length);
                         check("모자를 살 만큼 없으면 거절", !Wardrobe.Buy("straw"));
                         Wardrobe.DebugGrant(300);
                         int coins = Wardrobe.Minis;
@@ -754,11 +811,22 @@ namespace Omogi
                         Wardrobe.Buy("scarf"); Wardrobe.ToggleWear("scarf"); Wardrobe.Buy("glasses"); Wardrobe.ToggleWear("glasses");
                         Wardrobe.Buy("gradcap"); Wardrobe.ToggleWear("gradcap");
                         check("자리마다 하나, 목 → 얼굴 → 머리 순서", Wardrobe.WornRows.SequenceEqual(new[] { 0, 2, 5 }));
-                        check("메달은 살 수 없음", !Wardrobe.Buy("medal"));
+                        check("배지는 살 수 없고, 조건을 채우기 전에는 못 닮", !Wardrobe.Buy("badge4") && !Wardrobe.Owns("badge4"));
                         int capLeft = Wardrobe.DailyCap - Wardrobe.EarnedToday;
                         check("하루 상한 " + Wardrobe.DailyCap, Wardrobe.Earn(1000) == capLeft && Wardrobe.Earn(1) == 0);
+                        // 과목 배지: 하루 상한은 꼬마 뱁새에만 걸리고, 맞힌 수는 계속 센다.
+                        int correctBefore = Wardrobe.CorrectToday, minisBefore = Wardrobe.Minis;
+                        for (int i = 0; i < Wardrobe.MedalGoal; i++) Wardrobe.Answered(true, "약리학", true);
+                        check("약리학 100문제 → 약리학 배지만 받음", Wardrobe.Owns("badge4") && !Wardrobe.Owns("badge0") && Wardrobe.Minis == minisBefore);
+                        check("오늘 맞힌 수 " + Wardrobe.CorrectToday, Wardrobe.CorrectToday == correctBefore + Wardrobe.MedalGoal);
                         Wardrobe.Reload();
-                        check("다시 읽어도 그대로", Wardrobe.WornRows.SequenceEqual(new[] { 0, 2, 5 }) && Wardrobe.Owns("straw"));
+                        check("다시 읽어도 그대로", Wardrobe.WornRows.SequenceEqual(new[] { 0, 2, 5 }) && Wardrobe.Owns("straw") && Wardrobe.Owns("badge4")
+                            && Wardrobe.CorrectToday == correctBefore + Wardrobe.MedalGoal);
+                        check("서버에 올릴 옷 이름 " + Wardrobe.WornNames, Wardrobe.WornNames == "scarf,glasses,gradcap"
+                            && Wardrobe.RowsForNames("scarf,xx,badge4,crown").SequenceEqual(new[] { 0, 12, 6 }));
+                        Wardrobe.ToggleWear("badge4");
+                        check("배지를 달면 목도리는 벗음", Wardrobe.WornRows.SequenceEqual(new[] { 12, 2, 5 }) && app.Pet.Worn.SequenceEqual(new[] { 12, 2, 5 }));
+                        Wardrobe.ToggleWear("scarf");
                         app.Pet.SnapshotPoses(Path.Combine(dir, "poses-dressed.png"));
                         WardrobeForm wf = app.WardrobeWindow;
                         wf.Render();
@@ -766,6 +834,19 @@ namespace Omogi
                         wf.Snapshot(Path.Combine(dir, "window-wardrobe.png"));
                         check("옷장 창 " + wf.Width + "x" + wf.Height, wf.Height > 300);
                         wf.Hide();
+                        // 마을: 서버 없이 친구 셋을 채워 넣고 창을 찍는다.
+                        VillageForm vf = app.VillageWindow;
+                        vf.Show();
+                        vf.DebugFill(new List<Villager>
+                        {
+                            new Villager { Id = "a", Name = "지우", Handle = "jiwoo", Wear = "scarf,glasses,straw", Day = Wardrobe.TodayKey, Correct = 42, StudySecs = 4500, Studying = true, SeenSecs = 30 },
+                            new Villager { Id = "b", Name = "서연", Wear = "badge5,crown", Day = Wardrobe.TodayKey, StudySecs = 0, Studying = false, SeenSecs = 7200 },
+                            new Villager { Id = "c", Name = "민재", Handle = "mj", Wear = "", Day = "2000-01-01", Correct = 5, StudySecs = 600, Studying = false, SeenSecs = 200000 },
+                        });
+                        vf.Snapshot(Path.Combine(dir, "window-village.png"));
+                        check("마을 창 " + vf.Width + "x" + vf.Height, vf.Height > 200);
+                        vf.Hide();
+                        vf.DebugFill(new List<Villager>());
                         // 배율을 바꿔 가며 설정 창을 새로 만들어, 항목이 창 밖으로 나가거나 글자가 칸보다 길지 않은지 본다.
                         float real = Dpi.K;
                         foreach (float k in new[] { real, 1.25f, 1.5f, 2f })

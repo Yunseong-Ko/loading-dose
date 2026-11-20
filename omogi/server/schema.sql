@@ -57,6 +57,37 @@ create table if not exists omogi.send_log (
 create index if not exists send_log_pair on omogi.send_log (sender, recipient, at);
 
 -- 직접 접근은 전부 막는다 (정책을 하나도 만들지 않으므로 함수 말고는 아무도 못 읽는다).
+-- 마을: 친구에게 보이는 내 상태. 편지와 달리 잠그지 않은 정보다 (입은 옷, 오늘 맞힌 문제 수, 오늘 공부 시간, 공부 중인지).
+-- 앱이 보내 주는 값을 그대로 담아 둘 뿐이고, 서로 친구가 된 사람에게만 보여 준다.
+create table if not exists omogi.status (
+  id          uuid primary key references omogi.profiles (id) on delete cascade,
+  wear        text not null default '' check (char_length(wear) <= 80 and wear ~ '^[a-z0-9,]*$'),   -- 입은 옷의 이름들 (쉼표로 구분)
+  day         text not null default '' check (day ~ '^([0-9]{4}-[0-9]{2}-[0-9]{2})?$'),             -- 아래 숫자가 어느 날의 것인지 (사용자 컴퓨터의 날짜)
+  correct     int check (correct between 0 and 100000),                                             -- 오늘 맞힌 문제 수. 숨기면 null
+  study_secs  int not null default 0 check (study_secs between 0 and 86400),                        -- 오늘 공부한 시간(초)
+  studying    boolean not null default false,
+  updated_at  timestamptz not null default now()
+);
+
+-- 콕 찌르기: 받는 사람이 가져가면 지운다. 내용은 없다.
+create table if not exists omogi.pokes (
+  id          uuid primary key default gen_random_uuid(),
+  sender      uuid not null references omogi.profiles (id) on delete cascade,
+  recipient   uuid not null references omogi.profiles (id) on delete cascade,
+  at          timestamptz not null default now()
+);
+create index if not exists pokes_recipient on omogi.pokes (recipient, at);
+-- 하루 한도를 세는 기록
+create table if not exists omogi.poke_log (
+  sender      uuid not null references omogi.profiles (id) on delete cascade,
+  recipient   uuid not null references omogi.profiles (id) on delete cascade,
+  at          timestamptz not null default now()
+);
+create index if not exists poke_log_pair on omogi.poke_log (sender, recipient, at);
+
+alter table omogi.status      enable row level security;
+alter table omogi.pokes       enable row level security;
+alter table omogi.poke_log    enable row level security;
 alter table omogi.profiles    enable row level security;
 alter table omogi.friendships enable row level security;
 alter table omogi.letters     enable row level security;
@@ -246,6 +277,70 @@ begin
   delete from auth.users where id = v_me;
 end $$;
 
+-- ───────────── 마을 ─────────────
+-- 내 상태를 올린다. p_correct 가 null 이면 맞힌 수를 친구에게 숨긴다.
+create or replace function omogi.set_status(p_wear text, p_day text, p_correct int, p_study_secs int, p_studying boolean) returns void
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid := omogi.me();
+begin
+  if not exists (select 1 from omogi.profiles where id = v_me) then raise exception 'omogi:not_registered'; end if;
+  insert into omogi.status (id, wear, day, correct, study_secs, studying, updated_at)
+  values (v_me, coalesce(p_wear, ''), coalesce(p_day, ''), p_correct,
+          least(greatest(coalesce(p_study_secs, 0), 0), 86400), coalesce(p_studying, false), now())
+  on conflict (id) do update
+     set wear = excluded.wear, day = excluded.day, correct = excluded.correct, study_secs = excluded.study_secs,
+         studying = excluded.studying, updated_at = now();
+end $$;
+
+-- 서로 친구인 사람들의 상태. 10분 넘게 소식이 없으면 공부 중으로 치지 않는다 (앱이 꺼졌을 수 있다).
+create or replace function omogi.village() returns json
+language sql stable security definer set search_path = '' as $$
+  select coalesce(json_agg(json_build_object(
+           'id', p.id, 'name', p.name, 'handle', p.handle,
+           'wear', coalesce(s.wear, ''), 'day', coalesce(s.day, ''), 'correct', s.correct,
+           'study_secs', coalesce(s.study_secs, 0),
+           'studying', coalesce(s.studying and s.updated_at > now() - interval '10 minutes', false),
+           'seen_secs', case when s.updated_at is null then null else floor(extract(epoch from now() - s.updated_at))::int end)
+           order by p.name), '[]'::json)
+    from omogi.friendships f
+    join omogi.profiles p on p.id = case when f.a = omogi.me() then f.b else f.a end
+    left join omogi.status s on s.id = p.id
+   where (f.a = omogi.me() or f.b = omogi.me()) and f.status = 'accepted'
+$$;
+
+-- 친구를 콕 찌른다. 한 친구에게 하루 10번.
+create or replace function omogi.poke(p_to uuid) returns void
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid := omogi.me();
+begin
+  if not exists (select 1 from omogi.friendships
+                  where status = 'accepted' and ((a = v_me and b = p_to) or (a = p_to and b = v_me))) then
+    raise exception 'omogi:not_friends';
+  end if;
+  if (select count(*) from omogi.poke_log
+       where sender = v_me and recipient = p_to and at > now() - interval '24 hours') >= 10 then
+    raise exception 'omogi:daily_limit';
+  end if;
+  insert into omogi.pokes (sender, recipient) values (v_me, p_to);
+  insert into omogi.poke_log (sender, recipient) values (v_me, p_to);
+  delete from omogi.pokes where at < now() - interval '2 days';
+  delete from omogi.poke_log where at < now() - interval '2 days';
+end $$;
+
+-- 나를 찌른 친구들 (이름과 그 친구가 입은 옷). 가져가면 지운다.
+create or replace function omogi.fetch_pokes() returns json
+language plpgsql security definer set search_path = '' as $$
+declare v_me uuid := omogi.me(); v_out json;
+begin
+  with gone as (delete from omogi.pokes where recipient = v_me returning sender, at)
+  select coalesce(json_agg(json_build_object('from', g.sender, 'name', p.name, 'wear', coalesce(s.wear, '')) order by g.at), '[]'::json)
+    into v_out
+    from gone g
+    join omogi.profiles p on p.id = g.sender
+    left join omogi.status s on s.id = g.sender;
+  return v_out;
+end $$;
+
 revoke execute on all functions in schema omogi from public, anon;
 grant execute on all functions in schema omogi to authenticated;
 
@@ -270,6 +365,14 @@ create or replace function public.omogi_ack_mail(p_arrived uuid[], p_lost uuid[]
 language sql set search_path = '' as $$ select omogi.ack_mail(p_arrived, p_lost) $$;
 create or replace function public.omogi_delete_account() returns void
 language sql set search_path = '' as $$ select omogi.delete_account() $$;
+create or replace function public.omogi_set_status(p_wear text, p_day text, p_correct int, p_study_secs int, p_studying boolean) returns void
+language sql set search_path = '' as $$ select omogi.set_status(p_wear, p_day, p_correct, p_study_secs, p_studying) $$;
+create or replace function public.omogi_village() returns json
+language sql set search_path = '' as $$ select omogi.village() $$;
+create or replace function public.omogi_poke(p_to uuid) returns void
+language sql set search_path = '' as $$ select omogi.poke(p_to) $$;
+create or replace function public.omogi_fetch_pokes() returns json
+language sql set search_path = '' as $$ select omogi.fetch_pokes() $$;
 
 do $$
 declare f text;
@@ -277,7 +380,8 @@ begin
   foreach f in array array[
     'omogi_register(text, text)', 'omogi_set_handle(text)', 'omogi_request_friend(text)', 'omogi_respond_friend(uuid, boolean)',
     'omogi_remove_friend(uuid, boolean)', 'omogi_list_friends()', 'omogi_send_letter(uuid, text)',
-    'omogi_fetch_mail()', 'omogi_ack_mail(uuid[], uuid[])', 'omogi_delete_account()'] loop
+    'omogi_fetch_mail()', 'omogi_ack_mail(uuid[], uuid[])', 'omogi_delete_account()',
+    'omogi_set_status(text, text, integer, integer, boolean)', 'omogi_village()', 'omogi_poke(uuid)', 'omogi_fetch_pokes()'] loop
     execute format('revoke execute on function public.%s from public, anon', f);
     execute format('grant execute on function public.%s to authenticated', f);
   end loop;

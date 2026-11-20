@@ -1,5 +1,5 @@
 // 꼬마 뱁새(문제를 맞히면 모이는 것)와 옷장. Mac 판의 wardrobe.swift 와 같은 규칙이다.
-// 전부 내 컴퓨터(%APPDATA%\Omogi\wardrobe.json)에만 저장한다. 서버로는 아무것도 보내지 않는다.
+// 전부 내 컴퓨터(%APPDATA%\Omogi\wardrobe.json)에 저장한다. 입은 옷과 오늘 맞힌 수는 마을(Village.cs)이 친구에게 보인다.
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -20,7 +20,7 @@ namespace Omogi
     static class Wardrobe
     {
         public const int DailyCap = 60;         // 하루에 받을 수 있는 꼬마 뱁새
-        public const int MedalGoal = 100;       // 한 과목에서 이만큼 맞히면 메달
+        public const int MedalGoal = 100;       // 한 과목에서 이만큼 맞히면 그 과목 배지
         public const string Head = "머리", Face = "얼굴", Neck = "목";
         public static event Action Changed;
 
@@ -33,12 +33,21 @@ namespace Omogi
             new WearItem { Id = "steth", Row = 4, Name = "청진기", Slot = Neck, Price = 80 },
             new WearItem { Id = "gradcap", Row = 5, Name = "학사모", Slot = Head, Price = 120 },
             new WearItem { Id = "crown", Row = 6, Name = "왕관", Slot = Head, Price = 250 },
-            new WearItem { Id = "medal", Row = 7, Name = "메달", Slot = Neck, Price = 0, Note = "한 과목에서 100문제를 맞히면 받아요" },
         };
 
+        /// 과목별 배지: 그 과목에서 MedalGoal 문제를 맞히면 받는다. 순서는 packs/kmle.txt 의 과목 순서이고 wear.png 의 8번째 줄부터다.
+        public static readonly string[] Topics =
+        {
+            "해부학", "생화학", "생리학", "병리학", "약리학", "순환기", "호흡기", "소화기", "신장", "내분비", "혈액", "종양", "감염",
+            "알레르기", "류마티스", "외과 총론", "외과 각론", "산과", "부인과", "소아청소년과 총론", "소아청소년과 각론",
+            "정신건강의학과", "마이너", "예방의학", "의료법규",
+        };
+        public static readonly WearItem[] Badges = Topics.Select((t, i) =>
+            new WearItem { Id = "badge" + i, Row = 8 + i, Name = t + " 배지", Slot = Neck, Price = 0, Note = t }).ToArray();
+
         static bool loaded;
-        static int minis, dayCount, streak;
-        static string day = "";
+        static int minis, dayCount, streak, correctCount;
+        static string day = "", correctDay = "";
         static HashSet<string> owned = new HashSet<string>();
         static Dictionary<string, string> worn = new Dictionary<string, string>();
         static Dictionary<string, int> topicCorrect = new Dictionary<string, int>();
@@ -50,8 +59,8 @@ namespace Omogi
         public static void Reload()
         {
             loaded = true;
-            minis = dayCount = streak = 0;
-            day = "";
+            minis = dayCount = streak = correctCount = 0;
+            day = correctDay = "";
             owned = new HashSet<string>();
             worn = new Dictionary<string, string>();
             topicCorrect = new Dictionary<string, int>();
@@ -63,6 +72,8 @@ namespace Omogi
                 if (Json.Number(j, "minis", out v)) minis = Math.Max(0, (int)v);
                 if (Json.Number(j, "dayCount", out v)) dayCount = Math.Max(0, (int)v);
                 day = Json.Str(j, "day") ?? "";
+                if (Json.Number(j, "ccount", out v)) correctCount = Math.Max(0, (int)v);
+                correctDay = Json.Str(j, "cday") ?? "";
                 var o = Json.Strings(j, "owned");
                 if (o != null) owned = new HashSet<string>(o);
                 object x;
@@ -82,7 +93,7 @@ namespace Omogi
             {
                 var j = new Dictionary<string, object>
                 {
-                    { "minis", minis }, { "day", day }, { "dayCount", dayCount },
+                    { "minis", minis }, { "day", day }, { "dayCount", dayCount }, { "cday", correctDay }, { "ccount", correctCount },
                     { "owned", owned.OrderBy(s => s).ToList() }, { "worn", worn }, { "topicCorrect", topicCorrect },
                 };
                 File.WriteAllText(FilePath, Json.Write(j), new UTF8Encoding(false));
@@ -93,9 +104,57 @@ namespace Omogi
 
         public static int Minis { get { Load(); return minis; } }
         public static int EarnedToday { get { Load(); return day == Today ? dayCount : 0; } }
-        public static bool Owns(string id) { Load(); return owned.Contains(id); }
         public static bool IsWorn(string id) { Load(); return worn.Values.Contains(id); }
-        public static WearItem Item(string id) { return Items.FirstOrDefault(i => i.Id == id); }
+        public static WearItem Item(string id) { return Items.FirstOrDefault(i => i.Id == id) ?? Badges.FirstOrDefault(i => i.Id == id); }
+        public static string TodayKey { get { return Today; } }
+
+        /// 가진 물건인지: 산 것, 또는 조건을 채운 과목 배지
+        public static bool Owns(string id)
+        {
+            Load();
+            if (owned.Contains(id)) return true;
+            WearItem b = Badges.FirstOrDefault(i => i.Id == id);
+            return b != null && TopicCount(b.Note) >= MedalGoal;
+        }
+
+        /// 그 과목에서 지금까지 맞힌 수
+        public static int TopicCount(string topic)
+        {
+            Load();
+            int n;
+            return topicCorrect.TryGetValue(topic ?? "", out n) ? n : 0;
+        }
+
+        /// 오늘 맞힌 문제 수 (마을에서 친구에게 보인다)
+        public static int CorrectToday { get { Load(); return correctDay == Today ? correctCount : 0; } }
+
+        /// 입은 옷의 이름들을 겹치는 순서대로 (서버에 올리는 값, 예: "scarf,glasses,straw")
+        public static string WornNames
+        {
+            get
+            {
+                Load();
+                var names = new List<string>();
+                foreach (string slot in new[] { Neck, Face, Head })
+                {
+                    string id;
+                    if (worn.TryGetValue(slot, out id) && !string.IsNullOrEmpty(id)) names.Add(id);
+                }
+                return string.Join(",", names);
+            }
+        }
+
+        /// 친구가 올린 옷 이름들을 줄 번호로 바꾼다 (모르는 이름은 건너뛴다).
+        public static int[] RowsForNames(string names)
+        {
+            var rows = new List<int>();
+            foreach (string n in (names ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                WearItem it = Item(n.Trim());
+                if (it != null) rows.Add(it.Row);
+            }
+            return rows.ToArray();
+        }
 
         /// 꼬마 뱁새를 n 마리 받는다. 하루 상한을 넘는 만큼은 버린다. 실제로 받은 수를 돌려준다.
         public static int Earn(int n)
@@ -117,6 +176,8 @@ namespace Omogi
         {
             Load();
             if (!correct) { streak = 0; return 0; }
+            correctCount = CorrectToday + 1;
+            correctDay = Today;
             streak++;
             int got = Earn(1);
             if (streak >= 5)
@@ -129,9 +190,8 @@ namespace Omogi
                 int n;
                 topicCorrect.TryGetValue(topic, out n);
                 topicCorrect[topic] = n + 1;
-                if (n + 1 >= MedalGoal) owned.Add("medal");
-                Save();
             }
+            Save();
             return got;
         }
 
@@ -151,7 +211,7 @@ namespace Omogi
         {
             Load();
             WearItem it = Item(id);
-            if (it == null || !owned.Contains(id)) return;
+            if (it == null || !Owns(id)) return;
             string now;
             if (worn.TryGetValue(it.Slot, out now) && now == id) worn.Remove(it.Slot); else worn[it.Slot] = id;
             Save();
@@ -182,24 +242,14 @@ namespace Omogi
             return Rows(w);
         }
 
-        /// 메달까지 가장 가까운 과목과 맞힌 수 ("" 이면 아직 없음)
-        public static string BestTopic(out int count)
-        {
-            Load();
-            count = 0;
-            string best = "";
-            foreach (var kv in topicCorrect) if (kv.Value > count) { count = kv.Value; best = kv.Key; }
-            return best;
-        }
-
         public static void DebugGrant(int n) { Load(); minis += n; Save(); }       // 자체 점검용
     }
 
-    /// 옷장 창: 가진 꼬마 뱁새 수, 입은 모습, 물건 목록.
+    /// 옷장 창: 가진 꼬마 뱁새 수, 입은 모습, 물건 목록, 과목 배지.
     sealed class WardrobeForm : Form
     {
         readonly Pet pet;
-        const int RowH = 56, W = 440;
+        const int RowH = 46, CellH = 44, W = 440;
 
         public WardrobeForm(Pet pet)
         {
@@ -213,7 +263,7 @@ namespace Omogi
             StartPosition = FormStartPosition.CenterScreen;
             BackColor = Color.White;
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
-            ClientSize = new Size(Dpi.S(W), Dpi.S(150 + RowH * Wardrobe.Items.Length + 40));
+            ClientSize = new Size(Dpi.S(W), Dpi.S(146 + RowH * Wardrobe.Items.Length + 36 + CellH * 5 + 36));
             Dpi.FitToScreen(this);
             Wardrobe.Changed += OnChanged;
             Render();
@@ -226,14 +276,25 @@ namespace Omogi
             return new Label { Text = text, Bounds = r, Font = new Font("Malgun Gothic", size, style), ForeColor = color, BackColor = Color.Transparent, AutoEllipsis = true };
         }
 
-        PictureBox Picture(int[] rows, Rectangle r, int scale)
+        // cropTop: 그림 위쪽의 빈 줄을 이만큼(스프라이트 픽셀) 잘라 낸다 (줄 간격이 좁은 목록에서 쓴다).
+        PictureBox Picture(int[] rows, Rectangle r, int scale, int cropTop = 0)
         {
-            return new PictureBox { Image = pet.PreviewImage(rows, Dpi.S(scale)), SizeMode = PictureBoxSizeMode.CenterImage, Bounds = r };
+            Bitmap image = pet.PreviewImage(rows, Dpi.S(scale));
+            if (image != null && cropTop > 0)
+            {
+                int cut = cropTop * Dpi.S(scale);
+                Bitmap cropped = image.Clone(new Rectangle(0, cut, image.Width, image.Height - cut), image.PixelFormat);
+                image.Dispose();
+                image = cropped;
+            }
+            return new PictureBox { Image = image, SizeMode = PictureBoxSizeMode.CenterImage, Bounds = r };
         }
 
         public void Render()
         {
             SuspendLayout();
+            Point scroll = AutoScrollPosition;          // 스크롤된 채로 다시 그리면 자리가 어긋난다
+            if (AutoScroll) AutoScrollPosition = Point.Empty;
             foreach (Control c in Controls.Cast<Control>().ToList())
             {
                 Controls.Remove(c);
@@ -253,36 +314,47 @@ namespace Omogi
             {
                 WearItem it = item;
                 bool have = Wardrobe.Owns(it.Id), wearing = Wardrobe.IsWorn(it.Id);
-                Controls.Add(Picture(have ? Wardrobe.RowsTrying(it.Id) : new[] { it.Row }, Dpi.R(20, y, 72, 56), 2));
-                Controls.Add(Text_(it.Name, Dpi.R(100, y + 9, 200, 20), 9.75f, FontStyle.Bold, Color.FromArgb(28, 28, 30)));
+                Controls.Add(Picture(have ? Wardrobe.RowsTrying(it.Id) : new[] { it.Row }, Dpi.R(20, y, 72, RowH), 2, 5));
+                Controls.Add(Text_(it.Name, Dpi.R(100, y + 4, 200, 20), 9.75f, FontStyle.Bold, Color.FromArgb(28, 28, 30)));
                 string sub = it.Slot;
-                if (!have)
-                {
-                    if (it.Price > 0) sub += "  ·  꼬마 뱁새 " + it.Price + "마리";
-                    else
-                    {
-                        int n;
-                        string topic = Wardrobe.BestTopic(out n);
-                        sub += "  ·  " + it.Note + (topic.Length > 0 ? " (" + topic + " " + n + "/" + Wardrobe.MedalGoal + ")" : "");
-                    }
-                }
+                if (!have) sub += "  ·  꼬마 뱁새 " + it.Price + "마리";
                 else if (wearing) sub += "  ·  입고 있어요";
-                bool button = have || it.Price > 0;
-                Controls.Add(Text_(sub, Dpi.R(100, y + 30, button ? 210 : 320, 18), 8.25f, FontStyle.Regular, Color.Gray));
-                if (button)
+                Controls.Add(Text_(sub, Dpi.R(100, y + 24, 210, 18), 8.25f, FontStyle.Regular, Color.Gray));
+                var b = new Button { Text = have ? (wearing ? "벗기" : "입히기") : "사기", Bounds = Dpi.R(W - 116, y + 8, 96, 30), FlatStyle = FlatStyle.System };
+                b.Enabled = have || Wardrobe.Minis >= it.Price;
+                b.Click += (s, e) =>
                 {
-                    var b = new Button { Text = have ? (wearing ? "벗기" : "입히기") : "사기", Bounds = Dpi.R(W - 116, y + 12, 96, 30), FlatStyle = FlatStyle.System };
-                    b.Enabled = have || Wardrobe.Minis >= it.Price;
-                    b.Click += (s, e) =>
-                    {
-                        if (Wardrobe.Owns(it.Id)) Wardrobe.ToggleWear(it.Id);
-                        else if (Wardrobe.Buy(it.Id)) Wardrobe.ToggleWear(it.Id);        // 사자마자 입혀 본다
-                    };
-                    Controls.Add(b);
-                }
+                    if (Wardrobe.Owns(it.Id)) Wardrobe.ToggleWear(it.Id);
+                    else if (Wardrobe.Buy(it.Id)) Wardrobe.ToggleWear(it.Id);        // 사자마자 입혀 본다
+                };
+                Controls.Add(b);
                 y += RowH;
             }
-            Controls.Add(Text_("꼬마 뱁새와 옷은 이 컴퓨터에만 저장됩니다.", Dpi.R(20, y + 10, W - 40, 18), 8.25f, FontStyle.Regular, Color.DarkGray));
+
+            // 과목 배지: 한 과목에서 100문제를 맞히면 받는다. 받은 것은 누르면 달고, 다시 누르면 뗀다.
+            Controls.Add(new Label { Bounds = Dpi.R(20, y + 4, W - 40, 1), BackColor = Color.FromArgb(225, 225, 225) });
+            Controls.Add(Text_("과목 배지 — 한 과목에서 " + Wardrobe.MedalGoal + "문제를 맞히면 받아요 (목에 답니다)", Dpi.R(20, y + 12, W - 40, 18), 8.25f, FontStyle.Regular, Color.Gray));
+            int top = y + 36, cw = (W - 40) / 5;
+            for (int i = 0; i < Wardrobe.Badges.Length; i++)
+            {
+                WearItem it = Wardrobe.Badges[i];
+                bool have = Wardrobe.Owns(it.Id);
+                string name = it.Note.Replace("소아청소년과", "소아").Replace("정신건강의학과", "정신");
+                var b = new Button
+                {
+                    Text = (Wardrobe.IsWorn(it.Id) ? "● " : "") + name + "\n" + (have ? "받음" : Wardrobe.TopicCount(it.Note) + "/" + Wardrobe.MedalGoal),
+                    Bounds = Dpi.R(20 + (i % 5) * cw, top + (i / 5) * CellH, cw - 4, CellH - 4),
+                    Font = new Font("Malgun Gothic", 8f, have ? FontStyle.Bold : FontStyle.Regular),
+                    FlatStyle = FlatStyle.Flat, BackColor = have ? Color.FromArgb(246, 246, 248) : Color.White,
+                    ForeColor = Color.FromArgb(28, 28, 30), Enabled = have, UseMnemonic = false, Padding = Padding.Empty,
+                };
+                b.FlatAppearance.BorderSize = have ? 1 : 0;
+                b.FlatAppearance.BorderColor = Color.FromArgb(200, 200, 205);
+                b.Click += (s, e) => Wardrobe.ToggleWear(it.Id);
+                Controls.Add(b);
+            }
+            Controls.Add(Text_("이 컴퓨터에 저장됩니다. 입은 옷은 마을에서 친구에게 보여요.", Dpi.R(20, top + CellH * 5 + 8, W - 40, 18), 8.25f, FontStyle.Regular, Color.DarkGray));
+            if (AutoScroll) AutoScrollPosition = new Point(-scroll.X, -scroll.Y);
             ResumeLayout();
         }
 

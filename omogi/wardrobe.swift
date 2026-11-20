@@ -28,8 +28,14 @@ final class Wardrobe {
         WearItem(id: "steth", row: 4, name: "청진기", slot: .neck, price: 80, note: ""),
         WearItem(id: "gradcap", row: 5, name: "학사모", slot: .head, price: 120, note: ""),
         WearItem(id: "crown", row: 6, name: "왕관", slot: .head, price: 250, note: ""),
-        WearItem(id: "medal", row: 7, name: "메달", slot: .neck, price: 0, note: "한 과목에서 \(Wardrobe.medalGoal)문제를 맞히면 받아요"),
     ]
+    /// 과목별 배지: 그 과목에서 medalGoal 문제를 맞히면 받는다. 순서는 packs/kmle.txt 의 과목 순서이고 wear.png 의 8번째 줄부터다.
+    static let topics = ["해부학", "생화학", "생리학", "병리학", "약리학", "순환기", "호흡기", "소화기", "신장", "내분비", "혈액", "종양", "감염",
+                         "알레르기", "류마티스", "외과 총론", "외과 각론", "산과", "부인과", "소아청소년과 총론", "소아청소년과 각론",
+                         "정신건강의학과", "마이너", "예방의학", "의료법규"]
+    static let badges: [WearItem] = topics.enumerated().map { i, t in
+        WearItem(id: "badge\(i)", row: 8 + i, name: "\(t) 배지", slot: .neck, price: 0, note: t)
+    }
 
     private var d = UserDefaults.standard
     private var streak = 0
@@ -59,12 +65,6 @@ final class Wardrobe {
         set { d.set(newValue, forKey: "wardrobe.topicCorrect") }
     }
 
-    private static func today() -> String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f.string(from: Date())
-    }
-
     /// 오늘 받은 수
     var earnedToday: Int {
         return d.string(forKey: "wardrobe.day") == Wardrobe.today() ? d.integer(forKey: "wardrobe.dayCount") : 0
@@ -89,6 +89,8 @@ final class Wardrobe {
     func answered(correct: Bool, topic: String, selfGraded: Bool, popped: Bool) -> Int {
         guard !selfGraded else { return 0 }
         guard correct else { streak = 0; return 0 }
+        d.set(correctToday + 1, forKey: "wardrobe.ccount")
+        d.set(Wardrobe.today(), forKey: "wardrobe.cday")
         streak += 1
         var got = earn(1)
         if streak >= 5 {
@@ -99,15 +101,34 @@ final class Wardrobe {
             var t = topicCorrect
             t[topic, default: 0] += 1
             topicCorrect = t
-            if t[topic]! >= Wardrobe.medalGoal, !owned.contains("medal") {
-                owned.insert("medal")
-                notify()
-            }
+            if t[topic]! == Wardrobe.medalGoal { notify() }          // 방금 그 과목 배지를 받았다
         }
         return got
     }
 
-    func item(_ id: String) -> WearItem? { return Wardrobe.items.first { $0.id == id } }
+    func item(_ id: String) -> WearItem? { return Wardrobe.items.first { $0.id == id } ?? Wardrobe.badges.first { $0.id == id } }
+
+    /// 가진 물건인지: 산 것, 또는 조건을 채운 과목 배지
+    func owns(_ id: String) -> Bool {
+        if owned.contains(id) { return true }
+        guard let b = Wardrobe.badges.first(where: { $0.id == id }) else { return false }
+        return (topicCorrect[b.note] ?? 0) >= Wardrobe.medalGoal
+    }
+
+    /// 오늘 맞힌 문제 수 (마을에서 친구에게 보인다)
+    var correctToday: Int {
+        return d.string(forKey: "wardrobe.cday") == Wardrobe.today() ? d.integer(forKey: "wardrobe.ccount") : 0
+    }
+
+    /// 입은 옷의 이름들을 겹치는 순서대로 (서버에 올리는 값, 예: "scarf,glasses,straw")
+    var wornNames: String {
+        return [WearItem.Slot.neck, .face, .head].compactMap { wornIDs[$0.rawValue] }.joined(separator: ",")
+    }
+
+    /// 친구가 올린 옷 이름들을 줄 번호로 바꾼다 (모르는 이름은 건너뛴다).
+    func rows(forNames names: String) -> [Int] {
+        return names.split(separator: ",").compactMap { item(String($0))?.row }
+    }
 
     func buy(_ id: String) -> Bool {
         guard let it = item(id), it.price > 0, !owned.contains(id), minis >= it.price else { return false }
@@ -119,7 +140,7 @@ final class Wardrobe {
 
     /// 입히거나(같은 자리의 다른 물건은 벗는다), 이미 입고 있으면 벗긴다.
     func toggleWear(_ id: String) {
-        guard let it = item(id), owned.contains(id) else { return }
+        guard let it = item(id), owns(id) else { return }
         var w = wornIDs
         if w[it.slot.rawValue] == id { w[it.slot.rawValue] = nil } else { w[it.slot.rawValue] = id }
         wornIDs = w
@@ -143,8 +164,11 @@ final class Wardrobe {
         return rows(for: w)
     }
 
-    /// 메달까지 가장 가까운 과목과 맞힌 수
-    var bestTopic: (String, Int)? { return topicCorrect.max { $0.value < $1.value }.map { ($0.key, $0.value) } }
+    static func today() -> String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: Date())
+    }
 
     private func notify() { NotificationCenter.default.post(name: Wardrobe.changed, object: nil) }
 
@@ -156,7 +180,7 @@ final class Wardrobe {
 final class WardrobeWindow: NSObject {
     private let pet: Pet
     private var window: NSWindow?
-    private let W: CGFloat = 440, rowH: CGFloat = 56
+    private let W: CGFloat = 440, rowH: CGFloat = 46, cellH: CGFloat = 40
 
     init(pet: Pet) {
         self.pet = pet
@@ -168,7 +192,7 @@ final class WardrobeWindow: NSObject {
 
     func show() {
         if window == nil {
-            let h = 150 + rowH * CGFloat(Wardrobe.items.count) + 44
+            let h = 150 + rowH * CGFloat(Wardrobe.items.count) + 34 + cellH * 5 + 40
             let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: W, height: h), styleMask: [.titled, .closable],
                              backing: .buffered, defer: false)
             w.title = "옷장"
@@ -221,29 +245,49 @@ final class WardrobeWindow: NSObject {
         // 물건 목록
         var y = H - 150 - rowH
         for it in Wardrobe.items {
-            let have = wd.owned.contains(it.id)
-            root.addSubview(picture(have ? wd.rowsTrying(it.id) : [it.row], NSRect(x: 20, y: y + 3, width: 72, height: 50), scale: 2))
-            root.addSubview(label(it.name, NSRect(x: 100, y: y + 26, width: 190, height: 18), size: 13, weight: .medium))
+            let have = wd.owns(it.id)
+            root.addSubview(picture(have ? wd.rowsTrying(it.id) : [it.row], NSRect(x: 20, y: y - 3, width: 72, height: 50), scale: 2))
+            root.addSubview(label(it.name, NSRect(x: 100, y: y + 22, width: 190, height: 18), size: 13, weight: .medium))
             var sub = it.slot.rawValue
-            if !have {
-                if it.price > 0 { sub += "  ·  꼬마 뱁새 \(it.price)마리" }
-                else if let (topic, n) = wd.bestTopic { sub += "  ·  \(it.note) (\(topic) \(n)/\(Wardrobe.medalGoal))" }
-                else { sub += "  ·  \(it.note)" }
-            } else if wd.isWorn(it.id) { sub += "  ·  입고 있어요" }
-            root.addSubview(label(sub, NSRect(x: 100, y: y + 8, width: it.price > 0 || have ? 200 : 320, height: 16), size: 11, color: .secondaryLabelColor))
-
-            if have || it.price > 0 {
-                let title = have ? (wd.isWorn(it.id) ? "벗기" : "입히기") : "사기"
-                let b = NSButton(title: title, target: self, action: have ? #selector(wear(_:)) : #selector(buy(_:)))
-                b.frame = NSRect(x: W - 116, y: y + 12, width: 96, height: 30)
-                b.bezelStyle = .rounded
-                b.identifier = NSUserInterfaceItemIdentifier(it.id)
-                b.isEnabled = have || wd.minis >= it.price
-                root.addSubview(b)
-            }
+            if !have { sub += "  ·  꼬마 뱁새 \(it.price)마리" } else if wd.isWorn(it.id) { sub += "  ·  입고 있어요" }
+            root.addSubview(label(sub, NSRect(x: 100, y: y + 5, width: 200, height: 16), size: 11, color: .secondaryLabelColor))
+            let b = NSButton(title: have ? (wd.isWorn(it.id) ? "벗기" : "입히기") : "사기", target: self, action: have ? #selector(wear(_:)) : #selector(buy(_:)))
+            b.frame = NSRect(x: W - 116, y: y + 8, width: 96, height: 30)
+            b.bezelStyle = .rounded
+            b.identifier = NSUserInterfaceItemIdentifier(it.id)
+            b.isEnabled = have || wd.minis >= it.price
+            root.addSubview(b)
             y -= rowH
         }
-        root.addSubview(label("꼬마 뱁새와 옷은 이 Mac 에만 저장됩니다.", NSRect(x: 20, y: 16, width: W - 40, height: 16), size: 11, color: .tertiaryLabelColor))
+
+        // 과목 배지: 한 과목에서 100문제를 맞히면 받는다. 받은 것은 누르면 달고, 다시 누르면 뗀다.
+        let line2 = NSBox(frame: NSRect(x: 20, y: y + rowH - 6, width: W - 40, height: 1))
+        line2.boxType = .separator
+        root.addSubview(line2)
+        root.addSubview(label("과목 배지 — 한 과목에서 \(Wardrobe.medalGoal)문제를 맞히면 받아요 (목에 답니다)", NSRect(x: 20, y: y + rowH - 30, width: W - 40, height: 16), size: 11, color: .secondaryLabelColor))
+        let top = y + rowH - 34 - cellH
+        let cw = (W - 40) / 5
+        for (i, it) in Wardrobe.badges.enumerated() {
+            let have = wd.owns(it.id), n = wd.topicCorrect[it.note] ?? 0
+            let b = NSButton(title: "", target: self, action: #selector(wear(_:)))
+            b.frame = NSRect(x: 20 + CGFloat(i % 5) * cw, y: top - CGFloat(i / 5) * cellH, width: cw - 4, height: cellH - 4)
+            b.bezelStyle = .regularSquare
+            b.isBordered = have
+            b.identifier = NSUserInterfaceItemIdentifier(it.id)
+            b.isEnabled = have
+            let short = it.note.replacingOccurrences(of: "소아청소년과", with: "소아").replacingOccurrences(of: "정신건강의학과", with: "정신")
+            let mark = wd.isWorn(it.id) ? "● " : ""
+            let text = NSMutableAttributedString(string: mark + short + "\n", attributes: [.font: NSFont.systemFont(ofSize: 11, weight: have ? .semibold : .regular),
+                                                                                       .foregroundColor: have ? NSColor.labelColor : NSColor.tertiaryLabelColor])
+            text.append(NSAttributedString(string: have ? "받음" : "\(n)/\(Wardrobe.medalGoal)", attributes: [.font: NSFont.systemFont(ofSize: 10),
+                                                                                                         .foregroundColor: NSColor.secondaryLabelColor]))
+            let para = NSMutableParagraphStyle()
+            para.alignment = .center
+            text.addAttribute(.paragraphStyle, value: para, range: NSRange(location: 0, length: text.length))
+            b.attributedTitle = text
+            root.addSubview(b)
+        }
+        root.addSubview(label("이 Mac 에 저장됩니다. 입은 옷은 마을에서 친구에게 보여요.", NSRect(x: 20, y: 14, width: W - 40, height: 16), size: 11, color: .tertiaryLabelColor))
     }
 
     @objc private func buy(_ sender: NSButton) {

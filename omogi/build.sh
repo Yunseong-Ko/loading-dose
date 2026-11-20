@@ -15,8 +15,8 @@ cp ../packs/kmle.txt "$APP/Contents/Resources/kmle.txt"     # O/X 기본 문항 
 if [ -f server.json ]; then cp server.json "$APP/Contents/Resources/server.json"; fi
 # Apple Silicon 과 인텔 Mac 양쪽에서 돌도록 두 번 빌드해 하나로 합친다.
 TMP="$(mktemp -d)"
-swiftc -O -target arm64-apple-macos12.0 -o "$TMP/arm64" main.swift pet.swift focus.swift calendar.swift letters.swift server.swift quizwatch.swift wardrobe.swift ../mac/quiz.swift
-swiftc -O -target x86_64-apple-macos12.0 -o "$TMP/x86_64" main.swift pet.swift focus.swift calendar.swift letters.swift server.swift quizwatch.swift wardrobe.swift ../mac/quiz.swift
+swiftc -O -target arm64-apple-macos12.0 -o "$TMP/arm64" main.swift pet.swift focus.swift calendar.swift letters.swift server.swift quizwatch.swift wardrobe.swift village.swift ../mac/quiz.swift
+swiftc -O -target x86_64-apple-macos12.0 -o "$TMP/x86_64" main.swift pet.swift focus.swift calendar.swift letters.swift server.swift quizwatch.swift wardrobe.swift village.swift ../mac/quiz.swift
 lipo -create "$TMP/arm64" "$TMP/x86_64" -output "$APP/Contents/MacOS/Omogi"
 rm -rf "$TMP"
 # 서명: 키체인에 코드 서명 인증서(tools/make_signing_cert.sh 가 만드는 "Loading Dose Dev")가 있으면 그걸로 서명한다.

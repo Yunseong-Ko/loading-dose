@@ -270,6 +270,91 @@ namespace Omogi
         }
     }
 
+    /// 놀러 온 친구의 새: 화면 밖에서 날아와 내 오모기 옆에 앉아 말풍선을 띄우고, 잠깐 좋아하다가 날아간다.
+    sealed class Visitor
+    {
+        readonly LayerWindow win = new LayerWindow(true);
+        readonly Bubble note;
+        readonly Bitmap[] flyIn, flyOut, happy;      // 올 때, 돌아갈 때, 앉아서 (내 오모기 쪽을 본다)
+        readonly PointF from, land;                  // 발바닥 좌표
+        readonly PointF feet;                        // 그림 왼쪽 위에서 발바닥까지
+        readonly double born, stay;
+        readonly float unit;
+        readonly Rectangle area;
+        Bitmap shown;
+        const double Arrive = 1.3, Leave = 1.3;
+
+        public Visitor(Bitmap[] flyIn, Bitmap[] flyOut, Bitmap[] happy, PointF feet, PointF from, PointF land, string text,
+                       double stay, double now, float unit, Rectangle area)
+        {
+            this.flyIn = flyIn;
+            this.flyOut = flyOut;
+            this.happy = happy;
+            this.feet = feet;
+            this.from = from;
+            this.land = land;
+            this.stay = stay;
+            this.unit = unit;
+            this.area = area;
+            born = now;
+            note = new Bubble(unit);
+            note.SetText(text);
+            Place(flyIn[0], from);
+            win.Show();
+        }
+
+        void Place(Bitmap b, PointF at)
+        {
+            int x = (int)Math.Round(at.X - feet.X), y = (int)Math.Round(at.Y - feet.Y);
+            if (b != shown) { shown = b; win.Present(b, x, y); }
+            else win.MoveTo(x, y);
+        }
+
+        /// 한 틱 움직인다. 다 날아갔으면 false.
+        public bool Update(double now)
+        {
+            double t = now - born;
+            if (t < Arrive)
+            {
+                float k = (float)(t / Arrive), e = 1 - (1 - k) * (1 - k);
+                Place(flyIn[(int)(t * 14) % flyIn.Length],
+                    new PointF(from.X + (land.X - from.X) * e, from.Y + (land.Y - from.Y) * e - (float)Math.Sin(k * Math.PI) * 30 * unit));
+            }
+            else if (t < Arrive + stay)
+            {
+                double u = t - Arrive;
+                float hop = (float)Math.Abs(Math.Sin(u * 6)) * 8 * unit;
+                Place(happy[(int)(u * 5) % happy.Length], new PointF(land.X, land.Y - hop));
+                if (!note.Visible)
+                {
+                    float x = Math.Min(area.Right - note.Width - 6, Math.Max(area.Left + 6, land.X - note.Width / 2f));
+                    note.Location = new Point((int)Math.Round(x), Math.Max(area.Top + 2, (int)Math.Round(land.Y - 66 * unit - note.Height)));
+                    note.Show();
+                }
+            }
+            else if (t < Arrive + stay + Leave)
+            {
+                if (note.Visible) note.Hide();
+                float k = (float)((t - Arrive - stay) / Leave), e = k * k;
+                Place(flyOut[(int)(t * 14) % flyOut.Length],
+                    new PointF(land.X + (from.X - land.X) * e, land.Y + (from.Y - land.Y) * e - (float)Math.Sin(k * Math.PI) * 30 * unit));
+            }
+            else
+            {
+                Remove();
+                return false;
+            }
+            return true;
+        }
+
+        public void Remove()
+        {
+            try { note.Hide(); note.Dispose(); } catch { }
+            try { win.Hide(); win.Dispose(); } catch { }
+            foreach (Bitmap b in flyIn.Concat(flyOut).Concat(happy).Distinct()) b.Dispose();
+        }
+    }
+
     sealed class Pet : ICourier
     {
         // 순서는 tools/make_pet_sprites.py 의 FRAMES 와 같아야 한다.
@@ -281,6 +366,7 @@ namespace Omogi
             Build1, Build2, Nest0, Nest1, Drink0, Drink1, Drink2,
             Stretch, Cal0, Cal1,
             MailFly0, MailFly1, MailFly2, Mail0, Mail1,
+            Read0, Read1,
             Count
         }
 
@@ -370,6 +456,16 @@ namespace Omogi
         double popAt;                                // 터질 때 (0 이면 예정 없음)
         readonly List<MiniBird> minis = new List<MiniBird>();
         Bitmap[] miniRight, miniLeft;
+        readonly List<Visitor> visitors = new List<Visitor>();
+        bool studying;
+
+        /// 공부 중: 앉아 있을 때 책을 보고, 혼자 돌아다니지 않는다.
+        public bool Studying
+        {
+            get { return studying; }
+            set { if (studying != value) { studying = value; Retime(); } }
+        }
+        public int VisitorCount { get { return visitors.Count; } }
 
         // 지금 창에 올라가 있는 그림과 자리
         int shownKey = -1;
@@ -496,11 +592,43 @@ namespace Omogi
             }
         }
 
+        /// 친구의 새가 놀러 온다: 그 친구가 입은 옷 그대로 날아와 옆에 앉고, 말풍선을 띄웠다가 돌아간다.
+        public void Visit(int[] rows, string text)
+        {
+            if (!shown || bare.Count < (int)F.Count || visitors.Count >= 3) return;      // 오모기를 숨겨 두었으면 손님도 오지 않는다
+            Screen screen = CurrentScreen();
+            Rectangle wa = screen.WorkingArea;
+            // 내 오모기 옆자리 (화면 가운데 쪽), 이미 온 친구가 있으면 그만큼 더 옆으로
+            float side = pos.X > wa.Left + wa.Width / 2f ? -1 : 1;
+            var land = new PointF(Math.Min(wa.Right - 60 * U, Math.Max(wa.Left + 60 * U, pos.X + side * (76 + visitors.Count * 64) * U)), FloorY(screen));
+            var from = new PointF(side < 0 ? wa.Left - 80 * U : wa.Right + 80 * U, wa.Bottom - wa.Height * 0.55f);
+            int[] valid = (rows ?? new int[0]).Where(r => r >= 0 && r < wearRows.Count).ToArray();
+            bool right = land.X >= from.X;
+            int w = FrameW * zoom, h = FrameH * zoom;
+            Func<F, bool, Bitmap> img = (f, r) =>
+            {
+                using (Bitmap small = Dressed((int)f, valid)) return ScaledImage(small, r, w, h);
+            };
+            Func<bool, Bitmap[]> fly = r =>
+            {
+                Bitmap a = img(F.Fly0, r), b = img(F.Fly1, r), c = img(F.Fly2, r);
+                return new[] { a, b, c, b };
+            };
+            visitors.Add(new Visitor(fly(right), fly(!right), new[] { img(F.Happy0, !right), img(F.Happy1, !right) },
+                new PointF(FeetPx * zoom, h - FloorInset * zoom), from, land, text ?? "", Native.ReduceMotion() ? 5 : 4, Now, U, wa));
+            Retime();
+        }
+
         /// 짧은 말풍선 (꼬마 뱁새를 얻었을 때 등)
         public void Cheer(string text) { if (shown) Say(text, 2.2); }
 
         // 프레임 하나를 픽셀이 뭉개지지 않게 키운다.
         Bitmap Scaled(F f, bool right, int w, int h, bool naked = false)
+        {
+            return ScaledImage((naked ? bare : frames)[(int)f], right, w, h);
+        }
+
+        static Bitmap ScaledImage(Bitmap source, bool right, int w, int h)
         {
             var b = new Bitmap(w, h, PixelFormat.Format32bppArgb);
             using (Graphics g = Graphics.FromImage(b))
@@ -513,7 +641,7 @@ namespace Omogi
                 using (var attr = new ImageAttributes())
                 {
                     attr.SetWrapMode(WrapMode.TileFlipXY);       // 가장자리 픽셀이 옅어지지 않게
-                    g.DrawImage((naked ? bare : frames)[(int)f], dest, new Rectangle(0, 0, FrameW, FrameH), GraphicsUnit.Pixel, attr);
+                    g.DrawImage(source, dest, new Rectangle(0, 0, FrameW, FrameH), GraphicsUnit.Pixel, attr);
                 }
             }
             return b;
@@ -661,6 +789,8 @@ namespace Omogi
         {
             foreach (MiniBird m in minis) m.Remove();
             minis.Clear();
+            foreach (Visitor v in visitors) v.Remove();
+            visitors.Clear();
             popAt = 0;
             HideBubble();
             shown = false;
@@ -873,7 +1003,7 @@ namespace Omogi
         {
             bool moving = mode == Mode.Hop || mode == Mode.FlyOut || mode == Mode.FlyHome || mode == Mode.Roam || mode == Mode.Roll
                 || mode == Mode.Held || mode == Mode.Fall || mode == Mode.Depart || mode == Mode.Arrive || mode == Mode.Tumble
-                || minis.Count > 0 || popAt > 0 || Math.Abs(growthTarget - growth) > 0.004 || Now < reactUntil;
+                || minis.Count > 0 || visitors.Count > 0 || popAt > 0 || Math.Abs(growthTarget - growth) > 0.004 || Now < reactUntil;
             int want = moving ? 16 : 80;
             if (timer.Interval != want) timer.Interval = want;
             if (shown && !timer.Enabled) timer.Start();
@@ -991,12 +1121,13 @@ namespace Omogi
                 case Mode.Sit:
                     {
                         if (now < lookUntil) frame = (now >= tiltAt && now < tiltAt + 0.8) ? F.Tilt : F.Front;
+                        else if (studying) frame = now % 6.5 < 0.35 ? F.Read1 : F.Read0;      // 가끔 한 장 넘긴다
                         else frame = (int)(now / 0.9) % 2 == 0 ? F.Sit0 : F.Sit1;
                         // 생활 습관: 오래 손을 놓으면 둥지를 짓고, 계속 쓰고 있으면 가끔 물을 마신다.
                         double idle = Native.IdleSeconds();
                         if (idle > Config.NestMinutes * 60) { lookUntil = 0; SetMode(Mode.Nest); }
                         else if (Settings.HabitsOn && idle < 120 && now - lastNudge > 90 && StartNudge(now)) { }
-                        else if (now >= nextAction) ChooseNext(now);
+                        else if (now >= nextAction && !studying) ChooseNext(now);
                         break;
                     }
                 case Mode.Sleep:
@@ -1224,6 +1355,11 @@ namespace Omogi
                 minis.RemoveAll(m => !m.Update(dt, now));
                 if (minis.Count == 0) Retime();
             }
+            if (visitors.Count > 0)
+            {
+                visitors.RemoveAll(v => !v.Update(now));
+                if (visitors.Count == 0) Retime();
+            }
 
             Render(frame, lift);
             UpdateBubble(now);
@@ -1358,7 +1494,7 @@ namespace Omogi
         {
             get
             {
-                return "mode=" + mode + " growth=" + growth.ToString("0.00") + " streak=" + streak + " minis=" + minis.Count
+                return "mode=" + mode + " growth=" + growth.ToString("0.00") + " streak=" + streak + " minis=" + minis.Count + " visitors=" + visitors.Count + (studying ? " studying" : "")
                     + " window=" + winRect.Width + "x" + winRect.Height + "@" + winRect.Left + "," + winRect.Top
                     + " feet=" + (int)pos.X + "," + (int)pos.Y + " bubble=" + bubble.Visible;
             }

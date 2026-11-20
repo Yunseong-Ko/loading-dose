@@ -218,6 +218,8 @@ final class LetterBox {
     private var lastServerPoll = Date.distantPast
     private(set) var serverFriends: [Friend] = []      // 친구와 요청 (서버에서 받은 것)
     var onChange: (() -> Void)?
+    /// 서버로 새 편지가 도착했을 때 (보낸 사람 이름)
+    var onNewLetter: ((String) -> Void)?
 
     var inbox: [Received] { return saved.inbox }
     var sent: [Sent] { return saved.sent }
@@ -396,6 +398,7 @@ final class LetterBox {
                 let body = LetterCrypto.open(a.envelope) ?? "(이 편지는 열 수 없었어요.)"
                 s.saved.inbox.insert(Received(id: a.id, fromName: a.fromName, body: body, at: Date(), read: false), at: 0)
                 changed = true
+                if via is ServerPost { s.onNewLetter?(a.fromName) }
             }
             for id in lost {
                 if let i = s.saved.sent.firstIndex(where: { $0.id == id }), !s.saved.sent[i].lost {

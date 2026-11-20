@@ -684,6 +684,8 @@ namespace Omogi
 
         /// 읽지 않은 편지 수, 친구 목록, 내 정보가 바뀌면 화면 스레드에서 알린다.
         public event Action Changed;
+        /// 서버로 새 편지가 왔을 때 (연습 배달은 부르지 않는다). 보낸 사람의 이름을 준다.
+        public Action<string> OnNewLetter;
 
         public IList<Received> Inbox { get { return inbox; } }
         public IList<Sent> SentLetters { get { return sent; } }
@@ -966,6 +968,10 @@ namespace Omogi
                     string body = LetterCrypto.Open(a.Envelope) ?? "(이 편지는 열 수 없었어요.)";
                     inbox.Insert(0, new Received { Id = a.Id, FromName = a.FromName, Body = body, At = DateTime.UtcNow, Read = false });
                     changed = true;
+                    if (via is ServerPost && OnNewLetter != null)
+                    {
+                        try { OnNewLetter(a.FromName); } catch (Exception e) { Log.Write("편지: 도착 알림 오류 " + e.GetType().Name); }
+                    }
                 }
                 foreach (string id in lost)
                 {

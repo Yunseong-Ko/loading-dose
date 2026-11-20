@@ -46,7 +46,8 @@ BX, GROUND = 10, 26          # 몸의 왼쪽 끝 x, 발바닥 y (발 가운데�
 # 물건마다 옆모습·앞모습에서 찍을 점을 몸 좌표(몸의 왼쪽 위가 0,0)로 적는다.
 # 순서(=wear.png 의 줄 순서)를 바꾸면 pet.swift 와 Pet.cs 의 목록도 같이 바꿀 것.
 WEAR_OUT = ROOT / "omogi" / "pet" / "wear.png"
-ITEMS = ["scarf", "straw", "glasses", "scrubcap", "steth", "gradcap", "crown", "medal"]
+BADGES = 25                  # 과목별 배지 (kmle.txt 의 과목 순서). 모양은 같고 색만 다르다.
+ITEMS = ["scarf", "straw", "glasses", "scrubcap", "steth", "gradcap", "crown", "medal"] + [f"badge{i}" for i in range(BADGES)]
 
 RED, RED2 = (222, 62, 58, 255), (168, 40, 46, 255)
 STRAW, STRAW2, BAND = (236, 200, 124, 255), (190, 150, 82, 255), (200, 84, 70, 255)
@@ -99,6 +100,24 @@ FRONT = {
              + span(0, 4, 11, GOLD2) + [(7, -1, RED), (8, -1, RED)],
     "medal": [(7, 10, RED), (8, 10, RED), (7, 11, GOLD), (8, 11, GOLD), (7, 12, GOLD2), (8, 12, GOLD2)],
 }
+
+
+def badge_colors(i):
+    """과목마다 다른 색 (밝은 면, 어두운 면)."""
+    import colorsys
+    h = (i * 0.618034) % 1.0                          # 이웃한 과목끼리 색이 멀어지게 황금비로 돌린다
+    lit = tuple(int(c * 255) for c in colorsys.hsv_to_rgb(h, 0.62, 0.95)) + (255,)
+    dim = tuple(int(c * 255) for c in colorsys.hsv_to_rgb(h, 0.75, 0.62)) + (255,)
+    return lit, dim
+
+
+RIBBON = (70, 74, 88, 255)
+for _i in range(BADGES):
+    _lit, _dim = badge_colors(_i)
+    SIDE[f"badge{_i}"] = [(12, 10, RIBBON), (13, 10, RIBBON), (11, 11, _lit), (12, 11, _lit), (13, 11, _lit), (14, 11, _dim),
+                          (11, 12, _lit), (12, 12, WHITE), (13, 12, _lit), (14, 12, _dim), (12, 13, _dim), (13, 13, _dim)]
+    FRONT[f"badge{_i}"] = [(7, 10, RIBBON), (8, 10, RIBBON), (6, 11, _lit), (7, 11, _lit), (8, 11, _lit), (9, 11, _dim),
+                           (6, 12, _lit), (7, 12, WHITE), (8, 12, _lit), (9, 12, _dim), (7, 13, _dim), (8, 13, _dim)]
 
 
 def dress(put, table, wear, bx, by, shift, squash=0):
@@ -355,6 +374,28 @@ def letter(dy=0):
     return img
 
 
+def book(page=0):
+    """펼친 책 (새의 부리 앞에 세워 놓고 본다). page=1 이면 한 장을 넘기는 중."""
+    img = Image.new("RGBA", (W, H), CLEAR)
+    cover, paper, line = (176, 92, 70, 255), (255, 250, 238, 255), (190, 184, 172, 255)
+    left, right, top, bottom = 26, 35, GROUND - 9, GROUND - 2
+    for y in range(top, bottom + 1):
+        for x in range(left, right + 1):
+            edge = x in (left, right) or y == bottom
+            img.putpixel((x, y), cover if edge else paper)
+    mid = (left + right) // 2
+    for y in range(top, bottom):
+        img.putpixel((mid, y), line)                      # 가운데 접힌 곳
+    for y in (top + 2, top + 4):
+        for x in (left + 2, left + 3, mid + 2, mid + 3):
+            img.putpixel((x, y), line)                    # 글줄
+    if page:
+        for y in range(top - 1, top + 3):
+            img.putpixel((mid + 2, y), paper)             # 넘어가는 한 장
+        img.putpixel((mid + 2, top - 2), line)
+    return img
+
+
 def over(*layers):
     """뒤에 올 그림부터 차례로 겹친다."""
     out = Image.new("RGBA", (W, H), CLEAR)
@@ -404,6 +445,8 @@ def build(wear=()):
         ("mailFly2", over(frame(dy=2, legs="tuck", wing="down", tail="back", **w), letter(2))),
         ("mail0", over(frame(**w), letter())),                                                  # 편지를 물고 기다림
         ("mail1", over(frame(eye="happy", tail="up", **w), letter())),
+        ("read0", over(frame(squash=1, legs="crouch", lean=1, **w), book())),                # 책을 본다 (공부 중)
+        ("read1", over(frame(squash=1, legs="crouch", lean=1, eye="closed", **w), book(1))),  # 깜박이며 한 장 넘김
     ]
 
 
