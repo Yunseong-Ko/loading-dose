@@ -198,7 +198,8 @@ namespace Omogi
     /// 펑 터졌을 때 잠깐 나타나는 작은 새 한 마리. 튀어 나가 잠시 파닥이다가 화면 밖으로 날아간다.
     sealed class MiniBird
     {
-        readonly LayerWindow win = new LayerWindow(true);
+        readonly LayerWindow win;
+        bool caught;
         readonly Bitmap[] right, left;       // [hop, fly0, fly1, fly2, fly1] 을 오른쪽·왼쪽 보기로
         PointF pos, vel, from;               // 창의 가운데
         readonly double born, leaveAfter;
@@ -207,8 +208,18 @@ namespace Omogi
         Bitmap shown;
         readonly float unit;
 
-        public MiniBird(Bitmap[] right, Bitmap[] left, PointF start, PointF velocity, double now, double leaveAfter, PointF exit, float unit)
+        /// onCatch 가 있으면 누를 수 있고, 눌리면 그 자리에서 사라진다(잡힘).
+        public MiniBird(Bitmap[] right, Bitmap[] left, PointF start, PointF velocity, double now, double leaveAfter, PointF exit, float unit, Action onCatch = null)
         {
+            win = new LayerWindow(onCatch == null);
+            if (onCatch != null)
+                win.MouseDown += (s, e) =>
+                {
+                    if (caught || e.Button != MouseButtons.Left) return;
+                    caught = true;
+                    try { win.Hide(); } catch { }
+                    onCatch();
+                };
             this.right = right;
             this.left = left;
             pos = start;
@@ -232,6 +243,7 @@ namespace Omogi
         /// 한 틱 움직인다. 화면 밖으로 다 나갔으면 false.
         public bool Update(float dt, double now)
         {
+            if (caught) { Remove(); return false; }
             double t = now - born;
             int wing = 1 + (int)(t * 14) % 4;
             if (t < leaveAfter)
@@ -380,6 +392,7 @@ namespace Omogi
             U = zoom / 3f;
             bubble = new Bubble(U);
             LoadFrames();
+            LoadWear();
             win.OnDown = PickUp;
             win.OnUp = Drop;
             timer.Tick += (s, e) => { try { Tick(); } catch (Exception ex) { Log.Write("펫 오류: " + ex); } };
@@ -409,8 +422,85 @@ namespace Omogi
 
         public int FrameCount { get { return frames.Count; } }
 
+        // ── 옷 ──
+        // wear.png: 줄 = 물건, 칸 = 프레임. 맨몸 그림(bare) 위에 겹쳐 frames 를 다시 만든다.
+        readonly List<Bitmap> bare = new List<Bitmap>();
+        readonly List<Bitmap[]> wearRows = new List<Bitmap[]>();
+        int[] worn = new int[0];
+        /// 터져 나온 꼬마 뱁새를 눌러 잡았을 때 (있으면 꼬마들을 누를 수 있고, 조금 더 오래 머문다)
+        public Action OnMiniCaught;
+        public int WearCount { get { return wearRows.Count; } }
+        public int[] Worn { get { return worn; } }
+
+        void LoadWear()
+        {
+            bare.AddRange(frames);
+            try
+            {
+                using (Stream s = Assembly.GetExecutingAssembly().GetManifestResourceStream("wear.png"))
+                {
+                    if (s == null || bare.Count < (int)F.Count) return;
+                    using (var sheet = new Bitmap(s))
+                    {
+                        for (int row = 0; row < sheet.Height / FrameH; row++)
+                        {
+                            var line = new Bitmap[(int)F.Count];
+                            for (int i = 0; i < line.Length; i++)
+                                line[i] = sheet.Clone(new Rectangle(i * FrameW, row * FrameH, FrameW, FrameH), PixelFormat.Format32bppArgb);
+                            wearRows.Add(line);
+                        }
+                    }
+                }
+            }
+            catch (Exception e) { Log.Write("옷 그림을 읽지 못함: " + e.Message); }
+        }
+
+        Bitmap Dressed(int i, int[] rows)
+        {
+            var b = new Bitmap(bare[i]);
+            using (Graphics g = Graphics.FromImage(b))
+            {
+                g.CompositingMode = CompositingMode.SourceOver;
+                foreach (int row in rows)
+                    if (row >= 0 && row < wearRows.Count) g.DrawImageUnscaled(wearRows[row][i], 0, 0);
+            }
+            return b;
+        }
+
+        /// 옷을 갈아입힌다 (wear.png 의 줄 번호들, 겹치는 순서대로).
+        public void SetWear(int[] rows)
+        {
+            if (bare.Count == 0) return;
+            worn = rows.Where(r => r >= 0 && r < wearRows.Count).ToArray();
+            for (int i = 0; i < bare.Count; i++) frames[i] = worn.Length == 0 ? bare[i] : Dressed(i, worn);
+            cache.Clear();
+            shownKey = -1;                                   // 다음 틱에 새 그림으로 다시 올린다
+        }
+
+        /// 옷장 창에 보여 줄 앞모습 (주어진 옷을 입힌 채로, 한 픽셀을 scale 픽셀로)
+        public Bitmap PreviewImage(int[] rows, int scale)
+        {
+            if ((int)F.Front >= bare.Count) return null;
+            using (Bitmap small = Dressed((int)F.Front, rows))
+            {
+                var b = new Bitmap(FrameW * scale, FrameH * scale, PixelFormat.Format32bppArgb);
+                using (Graphics g = Graphics.FromImage(b))
+                using (var attr = new ImageAttributes())
+                {
+                    g.InterpolationMode = InterpolationMode.NearestNeighbor;
+                    g.PixelOffsetMode = PixelOffsetMode.Half;
+                    attr.SetWrapMode(WrapMode.TileFlipXY);
+                    g.DrawImage(small, new Rectangle(0, 0, b.Width, b.Height), 0, 0, FrameW, FrameH, GraphicsUnit.Pixel, attr);
+                }
+                return b;
+            }
+        }
+
+        /// 짧은 말풍선 (꼬마 뱁새를 얻었을 때 등)
+        public void Cheer(string text) { if (shown) Say(text, 2.2); }
+
         // 프레임 하나를 픽셀이 뭉개지지 않게 키운다.
-        Bitmap Scaled(F f, bool right, int w, int h)
+        Bitmap Scaled(F f, bool right, int w, int h, bool naked = false)
         {
             var b = new Bitmap(w, h, PixelFormat.Format32bppArgb);
             using (Graphics g = Graphics.FromImage(b))
@@ -423,7 +513,7 @@ namespace Omogi
                 using (var attr = new ImageAttributes())
                 {
                     attr.SetWrapMode(WrapMode.TileFlipXY);       // 가장자리 픽셀이 옅어지지 않게
-                    g.DrawImage(frames[(int)f], dest, new Rectangle(0, 0, FrameW, FrameH), GraphicsUnit.Pixel, attr);
+                    g.DrawImage((naked ? bare : frames)[(int)f], dest, new Rectangle(0, 0, FrameW, FrameH), GraphicsUnit.Pixel, attr);
                 }
             }
             return b;
@@ -1161,10 +1251,11 @@ namespace Omogi
             {
                 int z = Math.Max(1, zoom * 2 / 3);               // 본래 크기의 3분의 2
                 F[] set = { F.Hop1, F.Fly0, F.Fly1, F.Fly2, F.Fly1 };
-                miniRight = set.Select(f => Scaled(f, true, FrameW * z, FrameH * z)).ToArray();
-                miniLeft = set.Select(f => Scaled(f, false, FrameW * z, FrameH * z)).ToArray();
+                miniRight = set.Select(f => Scaled(f, true, FrameW * z, FrameH * z, true)).ToArray();      // 꼬마들은 옷을 안 입는다
+                miniLeft = set.Select(f => Scaled(f, false, FrameW * z, FrameH * z, true)).ToArray();
             }
             const int n = 14;
+            bool catchable = OnMiniCaught != null;
             float up = center.Y < screen.Top + screen.Height / 2f ? -0.8f : 1;   // 화면 위쪽에 있으면 아래로, 아래쪽에 있으면 위로 퍼진다
             double now = Now;
             for (int i = 0; i < n; i++)
@@ -1175,7 +1266,8 @@ namespace Omogi
                 var exit = new PointF(goRight ? screen.Right + 80 * U : screen.Left - 80 * U, center.Y - (float)Rand(-160, 220) * U);
                 minis.Add(new MiniBird(miniRight, miniLeft, center,
                     new PointF((float)Math.Cos(angle) * speed, -(float)Math.Sin(angle) * speed * up),
-                    now, 1.6 + i * 0.22, exit, U));
+                    now, catchable ? 3.0 + i * 0.4 : 1.6 + i * 0.22, exit, U,
+                    catchable ? (Action)(() => { if (OnMiniCaught != null) OnMiniCaught(); }) : null));
             }
             Retime();
         }
@@ -1228,7 +1320,7 @@ namespace Omogi
         /// 트레이 아이콘·설정 창에 쓸 얼굴 그림 (정면 프레임에서 몸만 잘라 낸 것).
         public Bitmap FaceImage(int height)
         {
-            if ((int)F.Front >= frames.Count) return null;
+            if ((int)F.Front >= bare.Count) return null;
             int width = (int)Math.Round(height * 20 / 23.0);
             var b = new Bitmap(width, height, PixelFormat.Format32bppArgb);
             using (Graphics g = Graphics.FromImage(b))
@@ -1237,7 +1329,7 @@ namespace Omogi
                 g.InterpolationMode = InterpolationMode.NearestNeighbor;
                 g.PixelOffsetMode = PixelOffsetMode.Half;
                 attr.SetWrapMode(WrapMode.TileFlipXY);
-                g.DrawImage(frames[(int)F.Front], new Rectangle(0, 0, width, height), 8, 5, 20, 23, GraphicsUnit.Pixel, attr);
+                g.DrawImage(bare[(int)F.Front], new Rectangle(0, 0, width, height), 8, 5, 20, 23, GraphicsUnit.Pixel, attr);
             }
             return b;
         }
@@ -1277,6 +1369,15 @@ namespace Omogi
         public string ModeName { get { return mode.ToString(); } }
         public float Growth { get { return growth; } }
         public int MiniCount { get { return minis.Count; } }
+        /// 자체 점검용: 떠 있는 꼬마를 하나 잡은 것처럼 한다.
+        public bool TestCatchMini()
+        {
+            if (minis.Count == 0 || OnMiniCaught == null) return false;
+            minis[0].Remove();
+            minis.RemoveAt(0);
+            OnMiniCaught();
+            return true;
+        }
         public Rectangle WindowRect { get { return winRect; } }
         public PointF Feet { get { return pos; } }
 

@@ -42,6 +42,72 @@ WING_LINE = {"fold": [(4, 10), (5, 10), (6, 10)], "up": [(3, -1), (4, 0), (5, 1)
              "mid": [(0, 8), (1, 8), (2, 8), (3, 8), (4, 8)], "down": [(5, 9), (4, 10), (3, 11), (2, 12)]}
 BX, GROUND = 10, 26          # 몸의 왼쪽 끝 x, 발바닥 y (발 가운데가 프레임 한가운데 x=18 에 온다)
 
+# ───────────── 옷 ─────────────
+# 물건마다 옆모습·앞모습에서 찍을 점을 몸 좌표(몸의 왼쪽 위가 0,0)로 적는다.
+# 순서(=wear.png 의 줄 순서)를 바꾸면 pet.swift 와 Pet.cs 의 목록도 같이 바꿀 것.
+WEAR_OUT = ROOT / "omogi" / "pet" / "wear.png"
+ITEMS = ["scarf", "straw", "glasses", "scrubcap", "steth", "gradcap", "crown", "medal"]
+
+RED, RED2 = (222, 62, 58, 255), (168, 40, 46, 255)
+STRAW, STRAW2, BAND = (236, 200, 124, 255), (190, 150, 82, 255), (200, 84, 70, 255)
+TEAL, TEAL2 = (92, 184, 176, 255), (56, 138, 134, 255)
+BLACK, GOLD, GOLD2 = (38, 40, 48, 255), (246, 204, 70, 255), (198, 150, 40, 255)
+TUBE, STEEL = (66, 122, 212, 255), (170, 178, 192, 255)
+RIM = (30, 30, 36, 255)
+
+
+def span(y, l, r, c):
+    return [(x, y, c) for x in range(l, r + 1)]
+
+
+def ring(cx, cy):
+    return [(cx + a, cy + b, RIM) for a, b in ((-1, -1), (0, -1), (1, -1), (-2, 0), (2, 0), (-2, 1), (2, 1), (-1, 2), (0, 2), (1, 2))]
+
+
+def cap_cells(c, edge):
+    """머리 위쪽 네 줄을 덮는 모자 (몸 모양을 따라간다)."""
+    out = span(0, 5, 10, edge)                       # 머리 깃까지 덮는 둥근 윗면
+    for y in range(1, 5):
+        l, r = BODY[y]
+        out += [(x, y, edge if x in (l, r) or y == 4 else c) for x in range(l, r + 1)]
+    return out
+
+
+# 옆모습 (오른쪽을 본다: 눈은 x=12, 부리는 x=16~17)
+SIDE = {
+    "scarf": span(10, 9, 15, RED) + span(11, 9, 15, RED) + [(10, 12, RED), (11, 12, RED), (10, 13, RED), (11, 13, RED), (10, 14, RED2), (11, 14, RED2)],
+    "straw": span(-1, 5, 10, STRAW) + span(0, 4, 11, STRAW) + span(1, 4, 11, BAND) + span(2, 0, 17, STRAW) + span(3, 13, 17, STRAW2),
+    "glasses": ring(12, 6) + span(6, 6, 9, RIM),
+    "scrubcap": cap_cells(TEAL, TEAL2),
+    "steth": [(9, 10, TUBE), (9, 11, TUBE), (10, 12, TUBE), (11, 13, TUBE), (12, 13, TUBE), (13, 12, TUBE), (14, 11, TUBE), (14, 10, TUBE),
+              (11, 14, STEEL), (12, 14, STEEL), (11, 15, STEEL), (12, 15, STEEL)],
+    "gradcap": span(0, 4, 11, BLACK) + span(1, 4, 11, BLACK) + span(-1, 1, 15, BLACK) + [(15, 0, GOLD), (15, 1, GOLD), (15, 2, GOLD2)],
+    "crown": [(4, -3, GOLD), (11, -3, GOLD), (4, -2, GOLD), (7, -2, GOLD), (8, -2, GOLD), (11, -2, GOLD)] + span(-1, 4, 11, GOLD)
+             + span(0, 4, 11, GOLD2) + [(7, -1, RED), (8, -1, RED)],
+    "medal": [(12, 10, RED), (13, 10, RED), (12, 11, GOLD), (13, 11, GOLD), (12, 12, GOLD2), (13, 12, GOLD2)],
+}
+# 앞모습 (눈은 x=4, 11)
+FRONT = {
+    "scarf": span(10, 1, 14, RED) + span(11, 1, 14, RED) + [(9, 12, RED), (10, 12, RED), (9, 13, RED), (10, 13, RED), (9, 14, RED2), (10, 14, RED2)],
+    "straw": span(-1, 4, 11, STRAW) + span(0, 3, 12, STRAW) + span(1, 3, 12, BAND) + span(2, -2, 17, STRAW) + span(3, -1, 0, STRAW2) + span(3, 15, 16, STRAW2),
+    "glasses": ring(4, 6) + ring(11, 6) + [(7, 6, RIM), (8, 6, RIM)],
+    "scrubcap": cap_cells(TEAL, TEAL2),
+    "steth": [(3, 10, TUBE), (3, 11, TUBE), (4, 12, TUBE), (5, 13, TUBE), (6, 13, TUBE), (9, 13, TUBE), (10, 13, TUBE), (11, 12, TUBE),
+              (12, 11, TUBE), (12, 10, TUBE), (7, 13, TUBE), (8, 13, TUBE), (7, 14, STEEL), (8, 14, STEEL), (7, 15, STEEL), (8, 15, STEEL)],
+    "gradcap": span(0, 3, 12, BLACK) + span(1, 3, 12, BLACK) + span(-1, 0, 15, BLACK) + [(14, 0, GOLD), (14, 1, GOLD), (14, 2, GOLD2)],
+    "crown": [(4, -3, GOLD), (11, -3, GOLD), (4, -2, GOLD), (7, -2, GOLD), (8, -2, GOLD), (11, -2, GOLD)] + span(-1, 4, 11, GOLD)
+             + span(0, 4, 11, GOLD2) + [(7, -1, RED), (8, -1, RED)],
+    "medal": [(7, 10, RED), (8, 10, RED), (7, 11, GOLD), (8, 11, GOLD), (7, 12, GOLD2), (8, 12, GOLD2)],
+}
+
+
+def dress(put, table, wear, bx, by, shift, squash=0):
+    """입은 물건을 몸 위에 찍는다. 납작해진 자세에서는 아래쪽 줄을 그만큼 올린다."""
+    for name in wear:
+        for (x, y, c) in table[name]:
+            yy = y if y < 8 else max(8, y - squash)
+            put(bx + x + shift(min(y, 8) if y < 8 else yy), by + yy, c)
+
 
 def body_cells(rows):
     return {(x, y) for y, (l, r) in enumerate(rows) for x in range(l, r + 1)}
@@ -56,7 +122,7 @@ def paint_body(put, rows, bx, by, lean=None):
         put(bx + x + (lean(y) if lean else 0), by + y, color)
 
 
-def frame(dy=0, squash=0, wing="fold", legs="stand", eye="open", tail="down", extra=None, lean=0):
+def frame(dy=0, squash=0, wing="fold", legs="stand", eye="open", tail="down", extra=None, lean=0, wear=()):
     """옆모습. dy: 몸을 위로 띄우는 픽셀 수, squash: 몸을 납작하게 누르는 픽셀 수(바닥은 그대로),
     lean: 머리 쪽이 앞으로 쏠리는 픽셀 수(꾸벅 조는 자세)."""
     img = Image.new("RGBA", (W, H), CLEAR)
@@ -118,6 +184,8 @@ def frame(dy=0, squash=0, wing="fold", legs="stand", eye="open", tail="down", ex
     put(ex - 1, ey + 3, PINK); put(ex, ey + 3, PINK)
     put(bx + 16 + sh(7), ey + 1, DARK); put(bx + 17 + sh(7), ey + 1, DARK); put(bx + 16 + sh(7), ey + 2, DARK)   # 부리
 
+    dress(put, SIDE, wear, bx, by, lambda y: sh(max(y, 0)), squash)
+
     if extra == "sweat":
         for x, y in ((15, -1), (15, -2), (16, -1)):
             put(bx + x, by + y, BLUE)
@@ -128,7 +196,7 @@ def frame(dy=0, squash=0, wing="fold", legs="stand", eye="open", tail="down", ex
     return img
 
 
-def front(eye="open", lean=0, wings="fold"):
+def front(eye="open", lean=0, wings="fold", wear=()):
     """앞모습. lean: 위쪽으로 갈수록 옆으로 미는 정도(1 이면 기우뚱), wings="up" 이면 양 날개를 쭉 편다(기지개)."""
     img = Image.new("RGBA", (W, H), CLEAR)
     rows = BODY
@@ -187,14 +255,15 @@ def front(eye="open", lean=0, wings="fold"):
     at(2, 9, PINK); at(3, 9, PINK)
     at(12, 9 + drop, PINK); at(13, 9 + drop, PINK)
     at(7, 8, DARK); at(8, 8, DARK)                   # 부리
+    dress(put, FRONT, wear, bx, by, lambda y: shift(max(y, 0)))
     if lean:                                         # 물음표 대신 작은 점 두 개
         put(bx + 21, by + 1, DARK2); put(bx + 22, by, DARK2)
     return img
 
 
-def rolled(quarters):
+def rolled(quarters, wear=()):
     """눈 감고 웅크린 옆모습을 몸 한가운데를 축으로 시계 방향 90도씩 돌린 그림 (데굴 구르기)."""
-    base = frame(eye="closed", legs="crouch")
+    base = frame(eye="closed", legs="crouch", wear=wear)
     side = 36
     work = Image.new("RGBA", (side, side), CLEAR)
     work.paste(base, (0, 1))                         # 몸의 가운데 (17.5, 16.5) 를 작업판 한가운데로
@@ -295,45 +364,50 @@ def over(*layers):
 
 
 # 순서를 바꾸면 omogi/pet.swift 의 Frame 도 같이 바꿀 것.
-FRAMES = [
-    ("sit0", frame()),
-    ("sit1", frame(squash=1)),
-    ("blink", frame(eye="closed")),
-    ("hop0", frame(squash=2, legs="crouch")),                       # 웅크림
-    ("hop1", frame(dy=3, legs="tuck", wing="mid", tail="back")),    # 공중
-    ("hop2", frame(squash=1, legs="crouch", tail="up")),            # 착지
-    ("fly0", frame(dy=2, legs="tuck", wing="up", tail="back")),
-    ("fly1", frame(dy=2, legs="tuck", wing="mid", tail="back")),
-    ("fly2", frame(dy=2, legs="tuck", wing="down", tail="back")),
-    ("happy0", frame(wing="up", eye="happy", tail="up")),
-    ("happy1", frame(dy=2, legs="tuck", wing="down", eye="happy", tail="up")),
-    ("sad", frame(squash=1, eye="sad", extra="sweat")),
-    ("sleep0", frame(squash=2, legs="crouch", eye="closed", extra="zz")),
-    ("sleep1", frame(squash=3, legs="crouch", eye="closed")),
-    ("front", front()),
-    ("frontBlink", front(eye="closed")),
-    ("tilt", front(lean=1)),
-    ("nod1", frame(squash=1, legs="crouch", eye="closed", lean=2)),               # 고개가 떨어지기 시작
-    ("nod2", frame(squash=2, legs="crouch", eye="closed", lean=4, extra="zz")),   # 푹 숙임
-    ("roll1", rolled(1)),
-    ("roll2", rolled(2)),
-    ("roll3", rolled(3)),
-    ("build1", over(frame(squash=1, lean=3, eye="closed"), nest(1))),                    # 가지를 물어다 놓음
-    ("build2", over(frame(), nest(2))),
-    ("nest0", over(frame(dy=-2, legs="none", eye="closed", tail="up"), nest(3))),        # 둥지에서 잠
-    ("nest1", over(frame(dy=-2, squash=1, legs="none", eye="closed", tail="up", extra="zz"), nest(3))),
-    ("drink0", over(glass(3), frame())),
-    ("drink1", over(glass(3), frame(squash=1, lean=4, eye="closed"))),                   # 부리를 컵에
-    ("drink2", over(glass(1), frame(eye="happy"))),
-    ("stretch", front(eye="happy", wings="up")),                                         # 기지개
-    ("cal0", over(calendar(), frame())),
-    ("cal1", over(calendar(), frame(eye="happy", tail="up"))),
-    ("mailFly0", over(frame(dy=2, legs="tuck", wing="up", tail="back"), letter(2))),      # 편지를 물고 난다
-    ("mailFly1", over(frame(dy=2, legs="tuck", wing="mid", tail="back"), letter(2))),
-    ("mailFly2", over(frame(dy=2, legs="tuck", wing="down", tail="back"), letter(2))),
-    ("mail0", over(frame(), letter())),                                                  # 편지를 물고 기다림
-    ("mail1", over(frame(eye="happy", tail="up"), letter())),
-]
+def build(wear=()):
+    w = dict(wear=wear)
+    return [
+        ("sit0", frame(**w)),
+        ("sit1", frame(squash=1, **w)),
+        ("blink", frame(eye="closed", **w)),
+        ("hop0", frame(squash=2, legs="crouch", **w)),                       # 웅크림
+        ("hop1", frame(dy=3, legs="tuck", wing="mid", tail="back", **w)),    # 공중
+        ("hop2", frame(squash=1, legs="crouch", tail="up", **w)),            # 착지
+        ("fly0", frame(dy=2, legs="tuck", wing="up", tail="back", **w)),
+        ("fly1", frame(dy=2, legs="tuck", wing="mid", tail="back", **w)),
+        ("fly2", frame(dy=2, legs="tuck", wing="down", tail="back", **w)),
+        ("happy0", frame(wing="up", eye="happy", tail="up", **w)),
+        ("happy1", frame(dy=2, legs="tuck", wing="down", eye="happy", tail="up", **w)),
+        ("sad", frame(squash=1, eye="sad", extra="sweat", **w)),
+        ("sleep0", frame(squash=2, legs="crouch", eye="closed", extra="zz", **w)),
+        ("sleep1", frame(squash=3, legs="crouch", eye="closed", **w)),
+        ("front", front(**w)),
+        ("frontBlink", front(eye="closed", **w)),
+        ("tilt", front(lean=1, **w)),
+        ("nod1", frame(squash=1, legs="crouch", eye="closed", lean=2, **w)),               # 고개가 떨어지기 시작
+        ("nod2", frame(squash=2, legs="crouch", eye="closed", lean=4, extra="zz", **w)),   # 푹 숙임
+        ("roll1", rolled(1, wear)),
+        ("roll2", rolled(2, wear)),
+        ("roll3", rolled(3, wear)),
+        ("build1", over(frame(squash=1, lean=3, eye="closed", **w), nest(1))),                    # 가지를 물어다 놓음
+        ("build2", over(frame(**w), nest(2))),
+        ("nest0", over(frame(dy=-2, legs="none", eye="closed", tail="up", **w), nest(3))),        # 둥지에서 잠
+        ("nest1", over(frame(dy=-2, squash=1, legs="none", eye="closed", tail="up", extra="zz", **w), nest(3))),
+        ("drink0", over(glass(3), frame(**w))),
+        ("drink1", over(glass(3), frame(squash=1, lean=4, eye="closed", **w))),                   # 부리를 컵에
+        ("drink2", over(glass(1), frame(eye="happy", **w))),
+        ("stretch", front(eye="happy", wings="up", **w)),                                         # 기지개
+        ("cal0", over(calendar(), frame(**w))),
+        ("cal1", over(calendar(), frame(eye="happy", tail="up", **w))),
+        ("mailFly0", over(frame(dy=2, legs="tuck", wing="up", tail="back", **w), letter(2))),      # 편지를 물고 난다
+        ("mailFly1", over(frame(dy=2, legs="tuck", wing="mid", tail="back", **w), letter(2))),
+        ("mailFly2", over(frame(dy=2, legs="tuck", wing="down", tail="back", **w), letter(2))),
+        ("mail0", over(frame(**w), letter())),                                                  # 편지를 물고 기다림
+        ("mail1", over(frame(eye="happy", tail="up", **w), letter())),
+    ]
+
+
+FRAMES = build()
 
 
 def main():
@@ -344,6 +418,18 @@ def main():
     sheet.save(OUT)
     print(f"{len(FRAMES)}프레임 → {OUT.relative_to(ROOT)}")
 
+    # 옷: 물건 하나만 입힌 그림에서 맨몸과 달라진 점만 남긴다. 줄 = 물건, 칸 = 프레임.
+    wear = Image.new("RGBA", (W * len(FRAMES), H * len(ITEMS)), CLEAR)
+    for row, name in enumerate(ITEMS):
+        for i, ((_, bare), (_, worn)) in enumerate(zip(FRAMES, build((name,)))):
+            for y in range(H):
+                for x in range(W):
+                    c = worn.getpixel((x, y))
+                    if c != bare.getpixel((x, y)):
+                        wear.putpixel((i * W + x, row * H + y), c)
+    wear.save(WEAR_OUT)
+    print(f"옷 {len(ITEMS)}개 → {WEAR_OUT.relative_to(ROOT)}")
+
     if len(sys.argv) > 1:                     # 확인용: 9열로 6배 확대, 회색 바탕
         k, cols = 6, 10
         rows = (len(FRAMES) + cols - 1) // cols
@@ -352,6 +438,15 @@ def main():
             big = im.resize((W * k, H * k), Image.NEAREST)
             prev.alpha_composite(big, ((i % cols) * W * k, (i // cols) * H * k))
         prev.save(sys.argv[1])
+    if len(sys.argv) > 2:                     # 옷 확인용: 물건마다 몇 가지 자세를 입혀 본다
+        k, show = 6, [0, 4, 6, 9, 13, 14, 16, 18, 19, 20, 24, 27, 29, 35]
+        sets = [(n,) for n in ITEMS] + [("scarf", "glasses", "straw"), ("steth", "glasses", "scrubcap"), ("medal", "crown")]
+        prev = Image.new("RGBA", (W * k * len(show), H * k * len(sets)), (214, 214, 214, 255))
+        for r, ws in enumerate(sets):
+            fr = build(ws)
+            for c, i in enumerate(show):
+                prev.alpha_composite(fr[i][1].resize((W * k, H * k), Image.NEAREST), (c * W * k, r * H * k))
+        prev.save(sys.argv[2])
 
 
 if __name__ == "__main__":

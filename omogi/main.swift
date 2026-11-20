@@ -97,6 +97,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private var statusItem: NSStatusItem!
     private let statusLine = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+    private let wardrobeItem = NSMenuItem(title: "옷장…", action: #selector(openWardrobe), keyEquivalent: "")
     private let petItem = NSMenuItem(title: "오모기 보이기", action: #selector(togglePet), keyEquivalent: "")
     private let focusItem = NSMenuItem(title: "집중 모드 — 유튜브·인스타그램을 열면 오모기가 닫음", action: #selector(toggleFocus), keyEquivalent: "")
     private let habitsItem = NSMenuItem(title: "습관 알림 — 물·눈 쉬기·스트레칭", action: #selector(toggleHabits), keyEquivalent: "")
@@ -140,6 +141,59 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         buildMenu()
         buildMainMenu()
         pet.onMailOpen = { [weak self] in self?.letterWindows.showInbox() }
+        // 동작 확인용: 옷장을 빈 저장소로 시험한다 (실제 기록은 건드리지 않는다).
+        //   맞히기 → 상한 → 사기 → 입히기를 해 보고, 옷장 창과 입은 자세들을 PNG 로 저장한다.
+        if let i = args.firstIndex(of: "--wardrobe-selftest"), i + 1 < args.count {
+            let dir = URL(fileURLWithPath: args[i + 1])
+            let wd = Wardrobe.shared
+            wd.useScratchStore()
+            var out: [String] = []
+            func check(_ name: String, _ ok: Bool) { out.append((ok ? "PASS " : "FAIL ") + name) }
+            check("옷 그림 \(pet.wearCount)줄 = 물건 \(Wardrobe.items.count)개", pet.wearCount == Wardrobe.items.count)
+            for _ in 0..<4 { wd.answered(correct: true, topic: "해부학", selfGraded: false, popped: true) }
+            check("4문제 정답 → 4마리 (\(wd.minis))", wd.minis == 4)
+            wd.answered(correct: true, topic: "해부학", selfGraded: true, popped: true)
+            check("빈칸 카드는 세지 않음 (\(wd.minis))", wd.minis == 4)
+            wd.answered(correct: false, topic: "해부학", selfGraded: false, popped: true)
+            check("오답은 깎지 않음 (\(wd.minis))", wd.minis == 4)
+            for _ in 0..<5 { wd.answered(correct: true, topic: "해부학", selfGraded: false, popped: false) }
+            check("터지는 동작이 꺼져 있으면 5연속에 +10 (\(wd.minis))", wd.minis == 19)
+            check("살 수 없으면 거절", !wd.buy("straw") && !wd.owned.contains("straw"))
+            let got = wd.earn(100)
+            check("하루 상한 \(Wardrobe.dailyCap) (이번에 \(got), 오늘 \(wd.earnedToday))", wd.earnedToday == Wardrobe.dailyCap && wd.earn(1) == 0)
+            wd.debugGrant(300)
+            let before = wd.minis
+            check("밀짚모자 사기", wd.buy("straw") && wd.minis == before - 40 && !wd.buy("straw"))
+            wd.toggleWear("straw")
+            check("산 것만 입힘", { wd.toggleWear("crown"); return wd.wornRows == [1] }())
+            _ = wd.buy("gradcap"); wd.toggleWear("gradcap")
+            check("같은 자리는 하나만 (머리: 학사모)", wd.wornRows == [5])
+            _ = wd.buy("scarf"); wd.toggleWear("scarf"); _ = wd.buy("glasses"); wd.toggleWear("glasses")
+            check("목 → 얼굴 → 머리 순서로 겹침", wd.wornRows == [0, 2, 5])
+            check("메달은 살 수 없음", !wd.buy("medal"))
+            for _ in 0..<100 { wd.answered(correct: true, topic: "약리학", selfGraded: false, popped: true) }
+            check("한 과목 100문제 → 메달", wd.owned.contains("medal"))
+            pet.setWear(wd.wornRows)
+            check("펫이 옷을 입음 \(pet.worn)", pet.worn == [0, 2, 5])
+            pet.snapshotPoses(to: dir.appendingPathComponent("wardrobe-poses.png"))
+            wardrobeWindow.show()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                self.wardrobeWindow.snapshot(to: dir.appendingPathComponent("wardrobe-window.png"))
+                wd.toggleWear("gradcap")
+                check("벗기", wd.wornRows == [0, 2])
+                try? out.joined(separator: "\n").write(to: dir.appendingPathComponent("wardrobe-result.txt"), atomically: true, encoding: .utf8)
+                UserDefaults.standard.removePersistentDomain(forName: "omogi.wardrobe.selftest")
+                NSApp.terminate(nil)
+            }
+            return
+        }
+        // 입은 옷을 펫에 입히고, 옷장이 바뀔 때마다 다시 입힌다.
+        pet.setWear(Wardrobe.shared.wornRows)
+        NotificationCenter.default.addObserver(forName: Wardrobe.changed, object: nil, queue: .main) { [weak self] _ in
+            guard let s = self else { return }
+            if s.pet.worn != Wardrobe.shared.wornRows { s.pet.setWear(Wardrobe.shared.wornRows) }
+            s.settingsWindow.refresh()
+        }
         // 처음 켰을 때는 설정 창을 보여 준다 (메뉴 막대 아이콘이 다른 아이콘에 밀려 안 보이는 Mac 이 많다).
         if !UserDefaults.standard.bool(forKey: "welcomed"), !args.contains("--send-test") {
             UserDefaults.standard.set(true, forKey: "welcomed")
@@ -182,6 +236,8 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private lazy var settingsWindow = SettingsWindow(app: self)
     @objc func openSettingsWindow() { settingsWindow.show() }
+    private lazy var wardrobeWindow = WardrobeWindow(pet: pet)
+    @objc func openWardrobe() { wardrobeWindow.show() }
 
     /// 설정 창이 그릴 지금 상태
     var toggles: [(title: String, note: String, on: Bool, action: Selector)] {
@@ -220,6 +276,8 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
             it.target = self
             menu.addItem(it)
         }
+        wardrobeItem.target = self
+        menu.addItem(wardrobeItem)
         menu.addItem(.separator())
         let writeItem = NSMenuItem(title: "편지 쓰기…", action: #selector(openCompose), keyEquivalent: "")
         writeItem.target = self
@@ -262,6 +320,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         let unread = letters.unreadCount
         inboxItem.title = unread > 0 ? "편지함… (새 편지 \(unread)통)" : "편지함…"
+        wardrobeItem.title = "옷장… (꼬마 뱁새 \(Wardrobe.shared.minis)마리)"
         if (FocusGuard.enabled || QuizWatcher.enterOn) && !AXIsProcessTrusted() {
             statusLine.title = "권한 필요 — 손쉬운 사용에서 'Omogi'를 허용하세요"
         } else if !Pet.enabled {
@@ -512,10 +571,11 @@ final class SettingsWindow: NSObject {
             b.bezelStyle = .rounded
             root.addSubview(b)
         }
-        for (i, (title, sel)) in [("지금 한 문제 풀기", #selector(AppController.solveNow)),
-                                  ("O/X 과목 고르기…", #selector(AppController.openSubjects))].enumerated() {
+        for (i, (title, sel)) in [("한 문제 풀기", #selector(AppController.solveNow)),
+                                  ("과목 고르기…", #selector(AppController.openSubjects)),
+                                  ("옷장 (\(Wardrobe.shared.minis))…", #selector(AppController.openWardrobe))].enumerated() {
             let b = NSButton(title: title, target: app, action: sel)
-            b.frame = NSRect(x: 20 + CGFloat(i) * 192, y: y - 58, width: 188, height: 32)
+            b.frame = NSRect(x: 20 + CGFloat(i) * 128, y: y - 58, width: 124, height: 32)
             b.bezelStyle = .rounded
             root.addSubview(b)
         }

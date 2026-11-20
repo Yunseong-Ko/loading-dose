@@ -69,6 +69,12 @@ final class QuizWatcher {
         }
         ui.onShow = { [weak pet] in pet?.goToCard() }
         ui.onAnswer = { [weak pet] correct in pet?.react(correct: correct) }
+        // 맞히면 꼬마 뱁새 1마리. 5연속으로 터지면 흩어지는 꼬마들을 눌러 잡는다 (터지는 동작이 꺼져 있으면 바로 준다).
+        ui.onAnswerCard = { [weak pet] correct, topic, selfGraded in
+            let got = Wardrobe.shared.answered(correct: correct, topic: topic, selfGraded: selfGraded, popped: !reduceMotion())
+            if got > 1 { pet?.cheer("꼬마 뱁새 +\(got)") }
+        }
+        pet.onMiniCaught = { Wardrobe.shared.earn(1) }
         ui.onHide = { [weak pet] in pet?.goHome() }
         pet.onQuizOpen = { [weak self] in self?.solveOne() }
     }

@@ -300,6 +300,8 @@ namespace Omogi
         /// 카드가 떴을 때 / 답했을 때(맞혔는지) / 사라질 때
         public Action OnShow, OnHide;
         public Action<bool> OnAnswer;
+        /// 답했을 때: (맞았는지, 과목)
+        public Action<bool, string> OnAnswerCard;
         /// 혼자 푸는 카드의 머리줄에 그릴 얼굴 그림
         public Bitmap Face;
 
@@ -420,6 +422,7 @@ namespace Omogi
             nextAt = DateTime.Now.AddSeconds(IsLoading() ? 4.0 : Standalone ? 12 : 2.5);
             Relayout();
             if (OnAnswer != null) OnAnswer(correct);
+            if (OnAnswerCard != null) OnAnswerCard(correct, card.Topic ?? "");
         }
 
         public void MarkDone(int sec)
@@ -760,6 +763,13 @@ namespace Omogi
             };
             Ui.OnShow = () => { UpdateHook(); pet.GoToCard(); };
             Ui.OnAnswer = correct => pet.React(correct);
+            // 맞히면 꼬마 뱁새 1마리. 5연속으로 터지면 흩어지는 꼬마들을 눌러 잡는다 (터지는 동작이 꺼져 있으면 바로 준다).
+            Ui.OnAnswerCard = (correct, topic) =>
+            {
+                int got = Wardrobe.Answered(correct, topic, !Native.ReduceMotion());
+                if (got > 1) pet.Cheer("꼬마 뱁새 +" + got);
+            };
+            pet.OnMiniCaught = () => Wardrobe.Earn(1);
             Ui.OnHide = () => { UpdateHook(); pet.GoHome(); };
             pet.OnQuizOpen = SolveOne;
             keys.CanAnswer = () => Ui.CanAnswer;

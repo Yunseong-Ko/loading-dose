@@ -650,6 +650,8 @@ final class QuizUI: NSObject {
     // 펫이 카드 흐름을 따라가도록 알려 준다.
     var onShow: (() -> Void)?
     var onAnswer: ((Bool) -> Void)?
+    /// 답했을 때: (맞았는지, 과목, 스스로 채점하는 빈칸 카드인지)
+    var onAnswerCard: ((Bool, String, Bool) -> Void)?
     var onHide: (() -> Void)?
     var canAnswer: Bool { return visible && isOpen && !answered && current != nil }
 
@@ -984,6 +986,7 @@ final class QuizUI: NSObject {
         let correct = isCloze ? choseO : (choseO == c.a)
         deck.record(c, correct: correct)
         onAnswer?(correct)
+        onAnswerCard?(correct, c.topic, isCloze)
 
         if isCloze {
             paint(choseO ? oButton : xButton, choseO ? "알았음" : "몰랐음", choseO ? .systemGreen : .systemRed)

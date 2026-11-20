@@ -35,8 +35,17 @@ final class PetView: NSView {
     }
 }
 
+/// 꼬마 뱁새를 누를 수 있게 하는 뷰
+fileprivate final class CatchView: NSView {
+    var onDown: (() -> Void)?
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { return true }
+    override func mouseDown(with event: NSEvent) { onDown?() }
+}
+
 /// 펑 터졌을 때 잠깐 나타나는 작은 새 한 마리. 튀어 나가 잠시 파닥이다가 화면 밖으로 날아간다.
+/// onCatch 가 있으면 누를 수 있고, 눌리면 그 자리에서 사라진다(잡힘).
 fileprivate final class MiniBird {
+    private var caught = false
     private let panel: NSPanel
     private let layer = CALayer()
     private let hop: CGImage
@@ -50,7 +59,7 @@ fileprivate final class MiniBird {
     private var leaving = false
     private let size = CGSize(width: 72, height: 56)      // 본래 크기의 3분의 2
 
-    init(hop: CGImage, fly: [CGImage], at start: CGPoint, velocity: CGPoint, leaveAfter: Double, exit: CGPoint) {
+    init(hop: CGImage, fly: [CGImage], at start: CGPoint, velocity: CGPoint, leaveAfter: Double, exit: CGPoint, onCatch: (() -> Void)? = nil) {
         self.hop = hop
         self.fly = fly
         pos = start
@@ -62,13 +71,19 @@ fileprivate final class MiniBird {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = false
-        panel.ignoresMouseEvents = true
+        panel.ignoresMouseEvents = onCatch == nil
         panel.level = .floating
         panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
-        let view = NSView(frame: NSRect(origin: .zero, size: size))
+        let view = CatchView(frame: NSRect(origin: .zero, size: size))
         view.wantsLayer = true
+        view.onDown = { [weak self] in
+            guard let s = self, !s.caught else { return }
+            s.caught = true
+            s.remove()
+            onCatch?()
+        }
         panel.contentView = view
         layer.frame = CGRect(origin: .zero, size: size)
         layer.contentsGravity = .resize
@@ -90,6 +105,7 @@ fileprivate final class MiniBird {
 
     /// 한 틱 움직인다. 화면 밖으로 다 나갔으면 false.
     func update(dt: CGFloat, now: Double) -> Bool {
+        if caught { return false }
         let t = now - born
         if t < leaveAfter {
             // 튀어 나간 뒤 속도가 줄면서 그 자리에서 파닥인다.
@@ -217,6 +233,14 @@ final class Pet: NSObject {
     private var popAt = 0.0                       // 터질 때 (0 이면 예정 없음)
     private var minis: [MiniBird] = []
     private let popStreak = 5
+    /// 터져 나온 꼬마 뱁새를 눌러 잡았을 때 (있으면 꼬마들을 누를 수 있고, 조금 더 오래 머문다)
+    var onMiniCaught: (() -> Void)?
+
+    // 옷: wear.png 의 줄 번호들. 맨몸 그림 위에 겹쳐 frames 를 다시 만든다.
+    private var bareFrames: [CGImage] = []
+    private var wearRows: [[CGImage]] = []
+    private var lastFrame = Frame.sit0
+    private(set) var worn: [Int] = []
 
     /// 펫을 오른쪽 클릭하면 뜨는 메뉴
     var menu: NSMenu? {
@@ -393,10 +417,70 @@ final class Pet: NSObject {
             let r = CGRect(x: CGFloat(i) * framePx.width, y: 0, width: framePx.width, height: framePx.height)
             if let f = sheet.cropping(to: r) { frames.append(f) }
         }
+        bareFrames = frames
+        // 옷 그림은 있을 때만 (Loading Dose 에는 없다).
+        guard frames.count == Frame.allCases.count,
+              let wurl = Bundle.main.url(forResource: "wear", withExtension: "png", subdirectory: "pet"),
+              let wsheet = NSImage(contentsOf: wurl)?.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return }
+        for row in 0..<(wsheet.height / Int(framePx.height)) {
+            var line: [CGImage] = []
+            for i in 0..<Frame.allCases.count {
+                let r = CGRect(x: CGFloat(i) * framePx.width, y: CGFloat(row) * framePx.height, width: framePx.width, height: framePx.height)
+                if let f = wsheet.cropping(to: r) { line.append(f) }
+            }
+            if line.count == Frame.allCases.count { wearRows.append(line) }
+        }
+    }
+
+    /// 입힐 수 있는 물건의 수 (wear.png 의 줄 수)
+    var wearCount: Int { return wearRows.count }
+
+    private func dressed(_ i: Int, _ rows: [Int]) -> CGImage {
+        let base = bareFrames[i]
+        let w = Int(framePx.width), h = Int(framePx.height)
+        guard !rows.isEmpty,
+              let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
+                                  space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return base }
+        ctx.interpolationQuality = .none
+        let r = CGRect(x: 0, y: 0, width: w, height: h)
+        ctx.draw(base, in: r)
+        for row in rows where row >= 0 && row < wearRows.count { ctx.draw(wearRows[row][i], in: r) }
+        return ctx.makeImage() ?? base
+    }
+
+    /// 옷을 갈아입힌다 (wear.png 의 줄 번호들, 겹치는 순서대로).
+    func setWear(_ rows: [Int]) {
+        guard !bareFrames.isEmpty else { return }
+        worn = rows.filter { $0 >= 0 && $0 < wearRows.count }
+        frames = (0..<bareFrames.count).map { dressed($0, worn) }
+        show(lastFrame)
+    }
+
+    /// 옷장 창에 보여 줄 앞모습 그림 (주어진 옷을 입힌 채로, 한 픽셀을 scale 포인트로)
+    func previewImage(wear rows: [Int], scale: CGFloat) -> NSImage? {
+        let i = Frame.front.rawValue
+        guard i < bareFrames.count else { return nil }
+        // 미리 크게 찍어 둔다 (이미지 뷰가 늘리면 픽셀이 뭉개진다).
+        let k = Int(scale * 2), w = Int(framePx.width) * k, h = Int(framePx.height) * k
+        guard let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
+                                  space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        ctx.interpolationQuality = .none
+        ctx.draw(dressed(i, rows), in: CGRect(x: 0, y: 0, width: w, height: h))
+        guard let big = ctx.makeImage() else { return nil }
+        return NSImage(cgImage: big, size: NSSize(width: framePx.width * scale, height: framePx.height * scale))
+    }
+
+    /// 짧은 말풍선 (꼬마 뱁새를 얻었을 때 등)
+    func cheer(_ text: String) {
+        guard shown else { return }
+        say(text, seconds: 2.2)
     }
 
     private func show(_ f: Frame) {
         guard f.rawValue < frames.count else { return }
+        lastFrame = f
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         sprite.contents = frames[f.rawValue]
@@ -977,9 +1061,10 @@ final class Pet: NSObject {
         let center = CGPoint(x: panel.frame.midX, y: panel.frame.midY)
         growth = 1
         growthTarget = 1
-        guard Frame.hop1.rawValue < frames.count else { return }
+        guard Frame.hop1.rawValue < bareFrames.count else { return }
         let screen = currentScreen().frame
-        let flyImages = [Frame.fly0, .fly1, .fly2, .fly1].map { frames[$0.rawValue] }
+        let flyImages = [Frame.fly0, .fly1, .fly2, .fly1].map { bareFrames[$0.rawValue] }
+        let catchable = onMiniCaught != nil
         let n = 14
         let up: CGFloat = center.y > screen.midY ? -0.8 : 1      // 화면 위쪽에 있으면 아래로, 아래쪽에 있으면 위로 퍼진다
         for i in 0..<n {
@@ -987,9 +1072,10 @@ final class Pet: NSObject {
             let speed = CGFloat.random(in: 380...900)
             let goRight = cos(angle) > 0
             let exit = CGPoint(x: goRight ? screen.maxX + 80 : screen.minX - 80, y: center.y + CGFloat.random(in: -160...220))
-            minis.append(MiniBird(hop: frames[Frame.hop1.rawValue], fly: flyImages, at: center,
+            minis.append(MiniBird(hop: bareFrames[Frame.hop1.rawValue], fly: flyImages, at: center,
                                   velocity: CGPoint(x: CGFloat(cos(angle)) * speed, y: CGFloat(sin(angle)) * speed * up),
-                                  leaveAfter: 1.6 + Double(i) * 0.22, exit: exit))
+                                  leaveAfter: catchable ? 3.0 + Double(i) * 0.4 : 1.6 + Double(i) * 0.22, exit: exit,
+                                  onCatch: catchable ? { [weak self] in self?.onMiniCaught?() } : nil))
         }
         retime()
     }
@@ -1016,8 +1102,8 @@ final class Pet: NSObject {
 
     /// 메뉴 막대에 쓸 작은 얼굴 그림 (정면 프레임에서 몸만 잘라 낸 것).
     func faceImage(height: CGFloat) -> NSImage? {
-        guard Frame.front.rawValue < frames.count,
-              let cut = frames[Frame.front.rawValue].cropping(to: CGRect(x: 8, y: 5, width: 20, height: 23)) else { return nil }
+        guard Frame.front.rawValue < bareFrames.count,
+              let cut = bareFrames[Frame.front.rawValue].cropping(to: CGRect(x: 8, y: 5, width: 20, height: 23)) else { return nil }
         return NSImage(cgImage: cut, size: NSSize(width: (height * 20 / 23).rounded(), height: height))
     }
 

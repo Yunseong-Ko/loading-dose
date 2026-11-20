@@ -32,6 +32,7 @@
   <!-- 펫 그림, 기본 제공 퀴즈, 편지 서버 주소(공개용 키)를 실행 파일 안에 넣는다. Mac 판과 같은 파일이다. -->
   <ItemGroup>
     <EmbeddedResource Include="..\pet\sprites.png" LogicalName="sprites.png" Link="sprites.png" />
+    <EmbeddedResource Include="..\pet\wear.png" LogicalName="wear.png" Link="wear.png" />
     <EmbeddedResource Include="..\..\packs\kmle.txt" LogicalName="kmle.txt" Link="kmle.txt" />
     <EmbeddedResource Include="..\server.json" LogicalName="server.json" Link="server.json" />
   </ItemGroup>

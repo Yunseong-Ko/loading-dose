@@ -6,6 +6,7 @@ on:
     paths:
       - 'omogi/windows/**'
       - 'omogi/pet/sprites.png'
+      - 'omogi/pet/wear.png'
       - 'omogi/server.json'
       - 'packs/kmle.txt'
       - '.github/workflows/omogi-windows.yml'
