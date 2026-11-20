@@ -195,6 +195,21 @@ final class Village {
         }
     }
 
+    /// 내 새가 친구 화면에 놀러 간다: 내 화면에서 날아 나가 50초쯤 뒤에 돌아온다. 친구 쪽은 1분 안에 받아 본다.
+    func goPlay(_ v: Villager, done: @escaping (String) -> Void) {
+        guard let server = server else { return }
+        guard pet.isShown, !pet.isOut, !Study.shared.studying, pet.goPlay(seconds: 50, back: "\(v.name)네 다녀왔어요") else {
+            done(Study.shared.studying ? "공부 중에는 놀러 가지 않아요" : "지금은 오모기가 나설 수 없어요")
+            return
+        }
+        server.call("omogi_poke", ["p_to": v.id, "p_kind": "play"]) { r in
+            switch r {
+            case .success: done("\(v.name)네로 놀러 갔어요. 조금 있다 돌아와요")
+            case .failure(let e): done(e.code.contains("daily_limit") ? "오늘은 \(v.name)네에 충분히 다녀왔어요" : "길을 잃고 돌아와요 (\(e.message))")
+            }
+        }
+    }
+
     func poke(_ v: Villager, done: @escaping (String) -> Void) {
         guard let server = server else { return }
         server.call("omogi_poke", ["p_to": v.id]) { r in
@@ -216,8 +231,14 @@ final class Village {
                 // 같은 친구가 여러 번 찔렀으면 한 번만 온다.
                 var seen = Set<String>()
                 for j in list {
-                    guard let name = j["name"] as? String, seen.insert(j["from"] as? String ?? name).inserted else { continue }
-                    let n = list.filter { ($0["from"] as? String) == (j["from"] as? String) }.count
+                    let kind = j["kind"] as? String ?? "poke"
+                    guard let name = j["name"] as? String, seen.insert((j["from"] as? String ?? name) + kind).inserted else { continue }
+                    if kind == "play" {      // 친구의 새가 놀러 왔다
+                        s.pet.visit(wear: Wardrobe.shared.rows(forNames: j["wear"] as? String ?? ""),
+                                    text: "\(josa(name, "이", "가")) 놀러 왔어요", play: true)
+                        continue
+                    }
+                    let n = list.filter { ($0["from"] as? String) == (j["from"] as? String) && ($0["kind"] as? String ?? "poke") == "poke" }.count
                     s.pet.visit(wear: Wardrobe.shared.rows(forNames: j["wear"] as? String ?? ""),
                                 text: n > 1 ? "\(josa(name, "이", "가")) 콕콕 \(n)번 찔렀어요" : "\(josa(name, "이", "가")) 콕 찔렀어요")
                 }
@@ -247,7 +268,7 @@ final class VillageWindow: NSObject {
     private var window: NSWindow?
     private var timer: Timer?
     private var flash = ""
-    private let W: CGFloat = 460, rowH: CGFloat = 62, yardH: CGFloat = 108
+    private let W: CGFloat = 520, rowH: CGFloat = 62, yardH: CGFloat = 108
     private let yard = YardView()
 
     init(village: Village, pet: Pet) {
@@ -381,8 +402,15 @@ final class VillageWindow: NSObject {
             root.addSubview(picture(wd.rows(forNames: v.wear), NSRect(x: 20, y: y, width: 72, height: 56), scale: 2))
             root.addSubview(label(v.handle.map { "\(v.name) (@\($0))" } ?? v.name, NSRect(x: 100, y: y + 32, width: 240, height: 18), size: 13, weight: .medium))
             root.addSubview(label(line(v), NSRect(x: 100, y: y + 13, width: 240, height: 16), size: 11, color: v.studying ? .systemGreen : .secondaryLabelColor))
+            let g = NSButton(title: "놀러 가기", target: self, action: #selector(goPlay(_:)))
+            g.frame = NSRect(x: W - 172, y: y + 14, width: 88, height: 30)
+            g.bezelStyle = .rounded
+            g.identifier = NSUserInterfaceItemIdentifier(v.id)
+            g.isEnabled = Village.around(v) && !pet.isOut       // 접속해 있는 친구에게만 간다
+            g.toolTip = Village.around(v) ? "내 오모기가 \(v.name)의 화면에 가서 놀다 와요" : "\(v.name)의 Omogi가 켜져 있을 때 갈 수 있어요"
+            root.addSubview(g)
             let p = NSButton(title: "콕", target: self, action: #selector(poke(_:)))
-            p.frame = NSRect(x: W - 92, y: y + 14, width: 72, height: 30)
+            p.frame = NSRect(x: W - 84, y: y + 14, width: 64, height: 30)
             p.bezelStyle = .rounded
             p.identifier = NSUserInterfaceItemIdentifier(v.id)
             root.addSubview(p)
@@ -401,6 +429,17 @@ final class VillageWindow: NSObject {
     @objc private func toggleShare(_ sender: NSButton) {
         Village.shareCorrect = sender.state == .on
         village.push(force: true)
+    }
+
+    @objc private func goPlay(_ sender: NSButton) {
+        guard let id = sender.identifier?.rawValue, let v = village.villagers.first(where: { $0.id == id }) else { return }
+        village.goPlay(v) { [weak self] text in
+            guard let s = self else { return }
+            s.flash = text
+            s.render()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { if s.flash == text { s.flash = ""; s.render() } }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 62) { s.render() }      // 돌아오면 버튼을 다시 켠다
+        }
     }
 
     @objc private func poke(_ sender: NSButton) {

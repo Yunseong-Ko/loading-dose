@@ -807,6 +807,15 @@ namespace Omogi
                     app.Pet.TestClearVisitors();
                     app.Village.DebugSet(new List<Villager>());
                     check("손님을 돌려보냄 (" + app.Pet.VisitorCount + ")", app.Pet.VisitorCount == 0);
+                    // 놀러 가기: 편지 심부름처럼 화면을 떠났다가 (점검에서는 1.5초 뒤에) 돌아와 앉는다.
+                    note("놀러 가기 전: " + app.Pet.DebugState);
+                    bool left = app.Pet.GoPlay(1.5, "지우네 다녀왔어요");
+                    check("놀러 가면 화면을 떠남", left && app.Pet.IsOut && !app.Pet.GoPlay(1.5, ""));
+                });
+                after(6000, () =>                    // 나가기 1.4초 + 밖에서 1.5초 + 돌아오기 1.4초보다 넉넉하게
+                {
+                    note("놀러 갔다 온 뒤: " + app.Pet.DebugState);
+                    check("놀러 갔다가 돌아옴", !app.Pet.IsOut && app.Pet.IsShown && app.Pet.ModeName == "Sit" && screen.Contains(app.Pet.WindowRect));
                 });
                 after(300, () =>
                 {

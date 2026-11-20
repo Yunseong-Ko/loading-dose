@@ -302,6 +302,23 @@ namespace Omogi
             });
         }
 
+        /// 내 새가 친구 화면에 놀러 간다: 내 화면에서 날아 나가 50초쯤 뒤에 돌아온다. 친구 쪽은 1분 안에 받아 본다.
+        public void GoPlay(Villager v, Action<string> done)
+        {
+            if (server == null || v == null) return;
+            if (!pet.IsShown || pet.IsOut || Study.Studying || !pet.GoPlay(50, v.Name + "네 다녀왔어요"))
+            {
+                done(Study.Studying ? "공부 중에는 놀러 가지 않아요" : "지금은 오모기가 나설 수 없어요");
+                return;
+            }
+            server.Call("omogi_poke", new Dictionary<string, object> { { "p_to", v.Id }, { "p_kind", "play" } }, r =>
+            {
+                if (r.Ok) done(v.Name + "네로 놀러 갔어요. 조금 있다 돌아와요");
+                else if (r.Error.Code.Contains("daily_limit")) done("오늘은 " + v.Name + "네에 충분히 다녀왔어요");
+                else done("길을 잃고 돌아와요 (" + r.Error.Message + ")");
+            });
+        }
+
         public void Poke(Villager v, Action<string> done)
         {
             if (server == null || v == null) return;
@@ -334,8 +351,14 @@ namespace Omogi
                 foreach (var j in list)
                 {
                     string name = LetterFiles.Text(j, "name"), from = LetterFiles.Text(j, "from");
-                    if (name == null || !seen.Add(from ?? name)) continue;
-                    int n = list.Count(x => LetterFiles.Text(x, "from") == from);
+                    string kind = LetterFiles.Text(j, "kind") ?? "poke";
+                    if (name == null || !seen.Add((from ?? name) + kind)) continue;
+                    if (kind == "play")                  // 친구의 새가 놀러 왔다
+                    {
+                        pet.Visit(Wardrobe.RowsForNames(LetterFiles.Text(j, "wear") ?? ""), Josa(name, "이", "가") + " 놀러 왔어요", true);
+                        continue;
+                    }
+                    int n = list.Count(x => LetterFiles.Text(x, "from") == from && (LetterFiles.Text(x, "kind") ?? "poke") == "poke");
                     pet.Visit(Wardrobe.RowsForNames(LetterFiles.Text(j, "wear") ?? ""),
                         n > 1 ? Josa(name, "이", "가") + " 콕콕 " + n + "번 찔렀어요" : Josa(name, "이", "가") + " 콕 찔렀어요");
                 }
@@ -367,9 +390,13 @@ namespace Omogi
         readonly WinTimer timer = new WinTimer { Interval = 30000 };
         string flash = "";
         int shownRows = -1;
-        const int W = 460, RowH = 62, YardH = 108;
+        const int W = 520, RowH = 62, YardH = 108;
         readonly YardControl yard;
         readonly WinTimer anim = new WinTimer { Interval = 100 };      // 마당의 새들 (창이 보일 때만 돈다)
+        readonly ToolTip tips = new ToolTip();
+        // 꺼진 버튼은 도움말을 스스로 띄우지 못해서, 창이 마우스 자리를 보고 대신 띄운다.
+        readonly List<KeyValuePair<Rectangle, string>> offTips = new List<KeyValuePair<Rectangle, string>>();
+        string offTipShown;
 
         public VillageForm(Village village, Pet pet)
         {
@@ -401,6 +428,22 @@ namespace Omogi
         }
 
         void OnChanged() { if (!IsDisposed && Visible) Render(); }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+            string text = null;
+            foreach (var kv in offTips) if (kv.Key.Contains(e.Location)) { text = kv.Value; break; }
+            if (text == offTipShown) return;
+            offTipShown = text;
+            if (text == null) tips.Hide(this); else tips.Show(text, this, e.X + Dpi.S(12), e.Y + Dpi.S(20), 5000);
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            base.OnMouseLeave(e);
+            if (offTipShown != null) { offTipShown = null; tips.Hide(this); }
+        }
 
         /// 창을 띄우면서 내 상태를 올리고 친구 소식을 받아 온다.
         public void Open()
@@ -457,6 +500,9 @@ namespace Omogi
                 ClientSize = new Size(Dpi.S(W), Dpi.S(H));
                 Dpi.FitToScreen(this);
             }
+            tips.RemoveAll();
+            offTips.Clear();
+            offTipShown = null;
             foreach (Control c in Controls.Cast<Control>().ToList())
             {
                 if (c == yard) continue;
@@ -521,8 +567,42 @@ namespace Omogi
                 Villager v = villager;
                 Controls.Add(Picture(Wardrobe.RowsForNames(v.Wear), Dpi.R(20, y + 3, 72, 56), 2));
                 Controls.Add(Text_(string.IsNullOrEmpty(v.Handle) ? v.Name : v.Name + " (@" + v.Handle + ")", Dpi.R(100, y + 11, 240, 20), 9.75f, FontStyle.Bold, ink));
-                Controls.Add(Text_(Line(v), Dpi.R(100, y + 32, 250, 18), 8.25f, FontStyle.Regular, v.Studying ? Color.FromArgb(40, 160, 80) : Color.Gray));
-                var poke = new Button { Text = "콕", Bounds = Dpi.R(W - 92, y + 16, 72, 30), FlatStyle = FlatStyle.System };
+                Controls.Add(Text_(Line(v), Dpi.R(100, y + 32, 240, 18), 8.25f, FontStyle.Regular, v.Studying ? Color.FromArgb(40, 160, 80) : Color.Gray));
+                bool around = Village.Around(v);
+                var go = new Button
+                {
+                    Text = "놀러 가기", Bounds = Dpi.R(W - 172, y + 16, 88, 30), FlatStyle = FlatStyle.System,
+                    Enabled = around && !pet.IsOut,       // 접속해 있는 친구에게만 간다
+                };
+                string tip = around ? "내 오모기가 " + v.Name + "의 화면에 가서 놀다 와요" : v.Name + "의 Omogi가 켜져 있을 때 갈 수 있어요";
+                if (go.Enabled) tips.SetToolTip(go, tip); else offTips.Add(new KeyValuePair<Rectangle, string>(go.Bounds, tip));
+                go.Click += (s, e) =>
+                {
+                    village.GoPlay(v, text =>
+                    {
+                        if (IsDisposed) return;
+                        flash = text;
+                        Render();
+                        var clear = new WinTimer { Interval = 5000 };
+                        clear.Tick += (s2, e2) =>
+                        {
+                            clear.Stop();
+                            clear.Dispose();
+                            if (flash == text && !IsDisposed) { flash = ""; Render(); }
+                        };
+                        clear.Start();
+                        var back = new WinTimer { Interval = 62000 };      // 돌아오면 버튼을 다시 켠다
+                        back.Tick += (s2, e2) =>
+                        {
+                            back.Stop();
+                            back.Dispose();
+                            if (!IsDisposed && Visible) Render();
+                        };
+                        back.Start();
+                    });
+                };
+                Controls.Add(go);
+                var poke = new Button { Text = "콕", Bounds = Dpi.R(W - 84, y + 16, 64, 30), FlatStyle = FlatStyle.System };
                 poke.Click += (s, e) =>
                 {
                     poke.Enabled = false;

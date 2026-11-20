@@ -196,6 +196,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
             pet.start()
             let came = village.playVisit(now: true)
             check("접속 중인 친구가 놀러 옴 (\(came), 손님 \(pet.visitorCount))", came && pet.visitorCount == 1)
+            check("놀러 가면 화면을 떠남", pet.goPlay(seconds: 50, back: "다녀왔어요") && pet.isOut && !pet.goPlay(seconds: 50, back: ""))
             pet.snapshotPoses(to: dir.appendingPathComponent("wardrobe-poses.png"))
             wardrobeWindow.show()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {

@@ -291,7 +291,7 @@ final class Pet: NSObject {
         case tumble                                // 던져져서 바닥을 구르는 중
         case depart, away, arrive, mail, lost      // 편지 심부름: 화면 밖으로 나감 → 밖에 있음 → 돌아옴 → 편지를 물고 기다림 / 잃어버림
     }
-    private enum Errand { case send, receive }
+    private enum Errand { case send, receive, outing }
 
     private let framePx = CGSize(width: 36, height: 28)
     private let zoom: CGFloat = 3                 // 스프라이트 1픽셀 = 화면 3포인트 (몸 지름 약 48pt)
@@ -348,6 +348,10 @@ final class Pet: NSObject {
     private var carrying = false                  // 지금 부리에 편지가 있는지
     private var errandScreen: NSScreen?
     private var mailText = ""                     // 편지를 물고 기다리는 동안의 말풍선
+    private var awayFor = 2.2                     // 화면 밖에 머무는 시간 (놀러 가면 길다)
+    private var backText = ""                     // 놀러 갔다 돌아와서 하는 말
+    /// 친구네 놀러 가서 화면에 없는 중
+    var isOut: Bool { return errand == .outing && (mode == .depart || mode == .away || mode == .arrive) }
     private var heldFromMail = false              // 편지를 물고 있다가 집힌 경우
     private var downAt = 0.0, downPos = CGPoint.zero
     /// 편지를 물고 기다리는 펫을 눌렀을 때
@@ -487,6 +491,7 @@ final class Pet: NSObject {
         let screen = currentScreen()
         let vf = screen.visibleFrame
         errand = e
+        if e != .outing { awayFor = 2.2 }
         errandScreen = screen
         carrying = e == .send
         homeX = pos.x
@@ -495,6 +500,15 @@ final class Pet: NSObject {
         // 화면 위쪽 바깥으로 비스듬히 날아 나간다.
         let x = pos.x < vf.midX ? min(vf.maxX - 60, pos.x + 280) : max(vf.minX + 60, pos.x - 280)
         fly(to: CGPoint(x: x, y: screen.frame.maxY + 10), as: .depart)
+    }
+
+    /// 친구네 놀러 간다: 화면 밖으로 날아가 seconds 초 뒤에 돌아와 한마디 한다. 지금 나설 수 없으면 false.
+    func goPlay(seconds: Double, back text: String) -> Bool {
+        guard canRunErrand, !studying else { return false }
+        awayFor = seconds
+        backText = text
+        startErrand(.outing)
+        return true
     }
 
     /// 편지를 보낼 때: 편지를 물고 화면 밖으로 날아갔다가 빈 부리로 돌아온다. 지금 나설 수 없으면 false.
@@ -1081,7 +1095,7 @@ final class Pet: NSObject {
         case .away:
             // 화면 밖에서 잠깐 머문 뒤(편지를 건네거나 받아 오는 시간) 제자리로 돌아온다.
             frame = .fly1
-            if t >= 2.2 {
+            if t >= awayFor {
                 carrying = errand == .receive
                 let screen = errandScreen ?? NSScreen.main ?? NSScreen.screens[0]
                 fly(to: CGPoint(x: homeX, y: floorY(on: screen)), as: .arrive)
@@ -1121,6 +1135,8 @@ final class Pet: NSObject {
                     carrying = false
                     setMode(.sit)
                     faceRight = false
+                    if errand == .outing, !backText.isEmpty { say(backText, seconds: 3); backText = "" }
+                    if errand == .outing { errand = .send }
                 }
                 frame = mode == .mail ? .mail0 : mode == .away ? .fly1 : .sit0
             }

@@ -76,6 +76,8 @@ create table if not exists omogi.pokes (
   recipient   uuid not null references omogi.profiles (id) on delete cascade,
   at          timestamptz not null default now()
 );
+-- kind: 'poke' 는 콕 찌르기, 'play' 는 놀러 가기 (보낸 친구의 새가 한동안 놀다 간다)
+alter table omogi.pokes add column if not exists kind text not null default 'poke';
 create index if not exists pokes_recipient on omogi.pokes (recipient, at);
 -- 하루 한도를 세는 기록
 create table if not exists omogi.poke_log (
@@ -308,11 +310,16 @@ language sql stable security definer set search_path = '' as $$
    where (f.a = omogi.me() or f.b = omogi.me()) and f.status = 'accepted'
 $$;
 
--- 친구를 콕 찌른다. 한 친구에게 하루 10번.
-create or replace function omogi.poke(p_to uuid) returns void
+-- 친구를 콕 찌르거나(poke) 친구에게 놀러 간다(play). 둘을 합쳐 한 친구에게 하루 10번.
+drop function if exists public.omogi_poke(uuid);
+drop function if exists omogi.poke(uuid);
+create or replace function omogi.poke(p_to uuid, p_kind text default 'poke') returns void
 language plpgsql security definer set search_path = '' as $$
 declare v_me uuid := omogi.me();
 begin
+  if p_kind is null or p_kind not in ('poke', 'play') then
+    raise exception 'omogi:bad_kind';
+  end if;
   if not exists (select 1 from omogi.friendships
                   where status = 'accepted' and ((a = v_me and b = p_to) or (a = p_to and b = v_me))) then
     raise exception 'omogi:not_friends';
@@ -321,7 +328,7 @@ begin
        where sender = v_me and recipient = p_to and at > now() - interval '24 hours') >= 10 then
     raise exception 'omogi:daily_limit';
   end if;
-  insert into omogi.pokes (sender, recipient) values (v_me, p_to);
+  insert into omogi.pokes (sender, recipient, kind) values (v_me, p_to, p_kind);
   insert into omogi.poke_log (sender, recipient) values (v_me, p_to);
   delete from omogi.pokes where at < now() - interval '2 days';
   delete from omogi.poke_log where at < now() - interval '2 days';
@@ -332,8 +339,8 @@ create or replace function omogi.fetch_pokes() returns json
 language plpgsql security definer set search_path = '' as $$
 declare v_me uuid := omogi.me(); v_out json;
 begin
-  with gone as (delete from omogi.pokes where recipient = v_me returning sender, at)
-  select coalesce(json_agg(json_build_object('from', g.sender, 'name', p.name, 'wear', coalesce(s.wear, '')) order by g.at), '[]'::json)
+  with gone as (delete from omogi.pokes where recipient = v_me returning sender, at, kind)
+  select coalesce(json_agg(json_build_object('from', g.sender, 'name', p.name, 'wear', coalesce(s.wear, ''), 'kind', g.kind) order by g.at), '[]'::json)
     into v_out
     from gone g
     join omogi.profiles p on p.id = g.sender
@@ -369,8 +376,8 @@ create or replace function public.omogi_set_status(p_wear text, p_day text, p_co
 language sql set search_path = '' as $$ select omogi.set_status(p_wear, p_day, p_correct, p_study_secs, p_studying) $$;
 create or replace function public.omogi_village() returns json
 language sql set search_path = '' as $$ select omogi.village() $$;
-create or replace function public.omogi_poke(p_to uuid) returns void
-language sql set search_path = '' as $$ select omogi.poke(p_to) $$;
+create or replace function public.omogi_poke(p_to uuid, p_kind text default 'poke') returns void
+language sql set search_path = '' as $$ select omogi.poke(p_to, p_kind) $$;
 create or replace function public.omogi_fetch_pokes() returns json
 language sql set search_path = '' as $$ select omogi.fetch_pokes() $$;
 
@@ -381,7 +388,7 @@ begin
     'omogi_register(text, text)', 'omogi_set_handle(text)', 'omogi_request_friend(text)', 'omogi_respond_friend(uuid, boolean)',
     'omogi_remove_friend(uuid, boolean)', 'omogi_list_friends()', 'omogi_send_letter(uuid, text)',
     'omogi_fetch_mail()', 'omogi_ack_mail(uuid[], uuid[])', 'omogi_delete_account()',
-    'omogi_set_status(text, text, integer, integer, boolean)', 'omogi_village()', 'omogi_poke(uuid)', 'omogi_fetch_pokes()'] loop
+    'omogi_set_status(text, text, integer, integer, boolean)', 'omogi_village()', 'omogi_poke(uuid, text)', 'omogi_fetch_pokes()'] loop
     execute format('revoke execute on function public.%s from public, anon', f);
     execute format('grant execute on function public.%s to authenticated', f);
   end loop;

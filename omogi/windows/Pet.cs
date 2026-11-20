@@ -437,7 +437,7 @@ namespace Omogi
             Depart, Away, Arrive, Mail, Lost         // 편지 심부름: 화면 밖으로 나감 → 밖에 있음 → 돌아옴 → 물고 기다림 / 잃어버림
         }
 
-        enum Errand { Send, Receive }
+        enum Errand { Send, Receive, Outing }
 
         const int FrameW = 36, FrameH = 28;
         const float FeetPx = 18;                     // 스프라이트 안에서 발 가운데의 x (한가운데라 뒤집어도 제자리)
@@ -495,6 +495,14 @@ namespace Omogi
         double downAt;
         Point downPos;
         bool holdingQuiz;                            // 물고 있는 것이 편지가 아니라 문제인지
+        double awayFor = 2.2;                        // 화면 밖에 머무는 시간 (놀러 가면 길다)
+        string backText = "";                        // 놀러 갔다 돌아와서 하는 말
+        double chatUntil;                            // 앉은 채로 한마디 하는 동안 (말풍선을 지우지 않는다)
+        /// 친구네 놀러 가서 화면에 없는 중
+        public bool IsOut
+        {
+            get { return errand == Errand.Outing && (mode == Mode.Depart || mode == Mode.Away || mode == Mode.Arrive); }
+        }
 
         /// 편지를 물고 기다리는 펫을 눌렀을 때
         public Action OnMailOpen;
@@ -758,7 +766,8 @@ namespace Omogi
         void UpdateBubble(double now)
         {
             if (!bubble.Visible) return;
-            bool talking = mode == Mode.Drink || mode == Mode.Eyes || mode == Mode.Stretch || mode == Mode.Mail || mode == Mode.Lost;
+            bool talking = mode == Mode.Drink || mode == Mode.Eyes || mode == Mode.Stretch || mode == Mode.Mail || mode == Mode.Lost
+                || (mode == Mode.Sit && now < chatUntil);
             if (now > bubbleUntil || !talking) HideBubble(); else PlaceBubble();
         }
 
@@ -777,6 +786,7 @@ namespace Omogi
             Screen screen = CurrentScreen();
             Rectangle wa = screen.WorkingArea;
             errand = e;
+            if (e != Errand.Outing) awayFor = 2.2;
             errandScreen = screen;
             carrying = e == Errand.Send;
             homeX = pos.X;
@@ -786,6 +796,17 @@ namespace Omogi
             float mid = wa.Left + wa.Width / 2f;
             float x = pos.X < mid ? Math.Min(wa.Right - 60 * U, pos.X + 280 * U) : Math.Max(wa.Left + 60 * U, pos.X - 280 * U);
             Fly(new PointF(x, screen.Bounds.Top - 10 * U), Mode.Depart);
+        }
+
+        /// 친구네 놀러 간다: 화면 밖으로 날아가 seconds 초 뒤에 돌아와 한마디 한다. 지금 나설 수 없으면 false.
+        public bool GoPlay(double seconds, string back)
+        {
+            if (!CanRunErrand || studying) return false;
+            awayFor = seconds;
+            backText = back ?? "";
+            StartErrand(Errand.Outing);
+            carrying = false;                        // 편지는 물지 않는다
+            return true;
         }
 
         /// 편지를 보낼 때: 편지를 물고 화면 밖으로 날아갔다가 빈 부리로 돌아온다.
@@ -1279,7 +1300,7 @@ namespace Omogi
                 case Mode.Away:
                     // 화면 밖에서 잠깐 머문 뒤(편지를 건네거나 받아 오는 시간) 제자리로 돌아온다.
                     frame = F.Fly1;
-                    if (t >= 2.2)
+                    if (t >= awayFor)
                     {
                         carrying = errand == Errand.Receive;
                         Fly(new PointF(homeX, FloorY(errandScreen ?? Screen.PrimaryScreen)), Mode.Arrive);
@@ -1331,8 +1352,14 @@ namespace Omogi
                             else
                             {
                                 carrying = false;
+                                bool outing = mode == Mode.Arrive && errand == Errand.Outing;
                                 SetMode(Mode.Sit);
                                 faceRight = false;
+                                if (outing)
+                                {
+                                    errand = Errand.Send;
+                                    if (backText.Length > 0) { chatUntil = Now + 3; Say(backText, 3); backText = ""; }
+                                }
                             }
                             frame = mode == Mode.Mail ? F.Mail0 : mode == Mode.Away ? F.Fly1 : F.Sit0;
                         }
